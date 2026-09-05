@@ -22,6 +22,10 @@ app.get("/health", (req, res) => {
 });
 
 // Keep service workers and modules from being served with a stale HTML fallback.
+// expose noname extensions
+app.use('/extension',
+    express.static('/app/noname-server/game/extension')
+);
 app.use(express.static(PUBLIC_DIR, {
   index: "index.html",
   etag: true,
