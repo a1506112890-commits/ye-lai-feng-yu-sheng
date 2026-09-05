@@ -26,6 +26,11 @@ app.get("/health", (req, res) => {
 app.use('/extension',
     express.static('/app/noname-server/game/extension')
 );
+app.get("/test-extension",(req,res)=>{
+    res.sendFile(
+        "/app/noname-server/game/extension/夜来风雨声/extension.js"
+    );
+});
 app.use(express.static(PUBLIC_DIR, {
   index: "index.html",
   etag: true,
