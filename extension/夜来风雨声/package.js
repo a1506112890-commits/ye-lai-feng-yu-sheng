@@ -1,0 +1,9 @@
+extension["夜来风雨声"]={
+	intro:"",
+	author:"无名玩家",
+	netdisk:"",
+	forum:"",
+	version:"1.0",
+	files:["飞天大蛤蟆.jpg","LICENSE","LICENSE","飞天大蛤蟆.jpg"],
+	size:"1.5MB"
+};
