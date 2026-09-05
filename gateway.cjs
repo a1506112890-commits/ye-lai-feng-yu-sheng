@@ -31,6 +31,9 @@ app.get("/test-extension",(req,res)=>{
         "/app/noname-server/game/extension/夜来风雨声/extension.js"
     );
 });
+app.use('/extension',
+ express.static(path.join(GAME_DIR,'extension'))
+);
 app.use(express.static(PUBLIC_DIR, {
   index: "index.html",
   etag: true,
