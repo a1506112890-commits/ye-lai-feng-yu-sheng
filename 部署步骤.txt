@@ -1,0 +1,148 @@
+群友杀 · 真无名杀 Render 部署说明
+=====================================
+
+这不是自制“三国杀页面”。
+本项目直接复用 Firfr/noname-docker 的两个成熟镜像：
+1. firfe/noname:web-1.10.17.4.1       —— 真正的无名杀网页客户端
+2. firfe/noname:server-1.10.17.4.1    —— 真正的无名杀 WebSocket 联机服务器
+
+本项目做的事情：
+- 把 Web 客户端和联机服务器放进同一个 Render 容器
+- Render 只公开一个 HTTPS/WSS 地址
+- 网页静态资源走同一个地址
+- WebSocket 自动转发给容器里的无名杀 server.js
+- 默认联机大厅地址自动改成当前 Render 域名的 WSS:443
+
+因此 GitHub 仓库只有几个 KB，不需要上传任何大型无名杀资源。
+
+
+【一】上传 GitHub
+----------------
+1. 解压 qunyousha_render_real_noname_v1.zip。
+2. 新建一个 GitHub 仓库，例如：
+   qunyousha-noname-render
+3. 上传“解压后的文件”，不要上传 zip 本身。
+
+仓库根目录应直接看到：
+- Dockerfile
+- gateway.cjs
+- patch-client.cjs
+- package.json
+- render.yaml
+- docker-compose.yml
+- 部署步骤.txt
+
+千万不要再上传 app.zip、character、image、audio 等大资源。
+这些已经包含在 Docker 镜像中。
+
+
+【二】在 Render 创建 Blueprint（推荐）
+------------------------------------
+1. 登录 Render。
+2. Dashboard -> New + -> Blueprint。
+3. 连接刚才的 GitHub 仓库。
+4. Render 会读取 render.yaml。
+5. 应看到将创建：
+   qunyousha-noname
+6. Plan 选择 Free。
+7. 点击 Apply / Deploy。
+
+第一次构建会拉取无名杀镜像，时间会比普通网页长。
+这一步不需要把几百 MB 游戏资源上传 GitHub。
+
+
+【三】如果不用 Blueprint，手动创建
+--------------------------------
+New + -> Web Service -> 选 GitHub 仓库
+
+Language / Runtime:
+Docker
+
+Dockerfile Path:
+./Dockerfile
+
+Health Check Path:
+/health
+
+环境变量：
+PORT = 10000
+
+然后 Deploy。
+
+
+【四】怎么判断部署成功
+--------------------
+Render 日志应该出现类似：
+
+[patch] default online lobby -> current Render hostname (WSS/443)
+[gateway] web + websocket gateway on 0.0.0.0:10000
+[gateway] internal noname server: ws://127.0.0.1:8080
+
+浏览器打开：
+https://你的服务名.onrender.com/health
+
+应看到：
+{"ok":true,...}
+
+再打开根网址：
+https://你的服务名.onrender.com/
+
+这里应该直接进入“真正的无名杀网页端”，而不是我们之前做的创建房间测试页面。
+
+
+【五】怎么玩单机
+--------------
+打开根网址后，按照无名杀本身的菜单进入身份、对决等单机模式即可。
+网页端使用浏览器本地存储保存设置。
+
+
+【六】怎么和朋友联机
+------------------
+你和朋友都打开同一个 Render 游戏网址。
+
+进入无名杀的“联机”模式。
+
+项目已经把默认大厅地址修改成当前网页自己的 WSS 地址：
+wss://你的服务名.onrender.com:443
+
+正常情况下直接连接即可。
+
+如果客户端仍弹出“输入联机地址”，手工填：
+wss://你的服务名.onrender.com:443
+
+注意：
+这里填的是同一个“游戏网页”的 Render 域名，不是另一个服务器。
+
+进入大厅后按无名杀原生流程创建房间、加入房间。
+
+
+【七】Render 免费版的限制
+------------------------
+- 长时间没人访问会休眠。
+- 第一个打开网页的人可能需要等待冷启动。
+- 你们准备开局时，建议房主先打开网址并等待完全加载，再让朋友加入。
+- 512MB 内存属于测试级配置。如果后续扩展、音频和多人局太重，才考虑升级。
+
+
+【八】DIY武将下一步怎么做
+-----------------------
+先不要再开发游戏规则。
+
+网页和原生联机验证成功后，只做一件事：
+制作“群友杀 DIY 扩展”，利用无名杀原生 extension 机制。
+
+这样：
+- 杀、闪、桃、锦囊、装备、AI、身份局、斗地主等继续由无名杀负责
+- 我们只写你自己的武将包和技能
+- 后面再加只有管理员能操作的 DIY 生成后台
+
+复杂技能如破军、伏骑等也应该生成“无名杀原生技能代码”，而不是重新造一个技能引擎。
+
+
+【九】如果部署失败，给我什么截图
+------------------------------
+只需要发：
+Render -> Deploys -> Logs 最后约 30 行
+
+不要再反复改 GitHub 文件。
+我可以根据实际 Docker 拉取 / Node 启动 / WebSocket 日志继续修。

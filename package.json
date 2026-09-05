@@ -1,0 +1,13 @@
+{
+  "name": "qunyousha-render-real-noname",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Run the Firfr noname web client and native websocket server behind one Render URL",
+  "scripts": {
+    "start": "node gateway.cjs"
+  },
+  "dependencies": {
+    "express": "4.18.2",
+    "http-proxy": "1.18.1"
+  }
+}
