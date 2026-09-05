@@ -1,3 +1,75 @@
+const multer = require("multer");
+const AdmZip = require("adm-zip");
+const fs = require("fs");
+
+const upload = multer({
+ dest:"/tmp/qys-upload/"
+});
+app.use(
+"/admin",
+express.static("/app/admin")
+);
+app.post(
+"/api/admin/upload",
+upload.single("extension"),
+(req,res)=>{
+
+try{
+
+const zip =
+new AdmZip(req.file.path);
+
+
+const name =
+req.file.originalname.replace(".zip","");
+
+
+const target =
+"/app/noname-server/extension/"
++name;
+
+
+if(fs.existsSync(target)){
+fs.rmSync(
+target,
+{
+recursive:true,
+force:true
+}
+);
+}
+
+
+zip.extractAllTo(
+target,
+true
+);
+
+
+res.json({
+
+ok:true,
+
+message:"扩展安装成功",
+
+extension:name
+
+});
+
+
+}catch(e){
+
+res.status(500).json({
+
+ok:false,
+
+error:e.message
+
+});
+
+}
+
+});
 const express = require("express");
 const http = require("http");
 const httpProxy = require("http-proxy");
