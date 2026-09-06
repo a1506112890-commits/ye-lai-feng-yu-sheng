@@ -130,45 +130,56 @@ xs_luoshi:{
     },
 
     content:function(){
-        if(player.countCards("h")){
-    player.discard(player.getCards("h"));
-}
+        if(player.countCards("h")>0){
+            player.discard(player.getCards("h"));
+        }
         player.recover(3);
     },
 },
+
 xs_tanshi:{
     locked:true,
     forced:true,
 
     mod:{
         cardname:function(card,player){
-            if(card.name=="equip1"||card.name=="equip3"){
+            if(!card || !card.name) return;
+
+            var info=lib.card[card.name];
+            if(!info) return;
+
+            if(info.subtype=="equip3" || info.subtype=="equip4"){
                 return "tao";
             }
         },
     },
 },
+
 xs_wumou:{
     locked:true,
     forced:true,
 
     mod:{
         cardname:function(card,player){
+            if(!card || !card.name) return;
 
-            if(get.type(card)=="trick" 
-            && card.name!="wuxie"){
+            var info=lib.card[card.name];
+            if(!info) return;
+
+            if(info.type=="trick" || info.type=="delay"){
                 return "sha";
             }
-
         },
 
         cardUsable:function(card,num,player){
+            if(!card || !card.name) return;
 
-            if(get.type(card)=="trick"
-            && card.name!="wuxie"){
+            var info=lib.card[card.name];
+            if(!info) return;
+
+            if(info.type=="trick" || info.type=="delay"){
                 return Infinity;
             }
-
         },
     },
 },
