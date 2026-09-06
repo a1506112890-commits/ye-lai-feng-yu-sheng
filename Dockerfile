@@ -11,6 +11,7 @@ COPY --from=noname_web /public /app/public
 # The already-built native Noname lobby/WebSocket server.
 COPY --from=noname_server /app/game /app/noname-server/game
 COPY character/diy /app/public/character/diy
+COPY image/character /app/public/image/character
 COPY package.json /app/package.json
 COPY gateway.cjs /app/gateway.cjs
 COPY patch-client.cjs /app/patch-client.cjs
