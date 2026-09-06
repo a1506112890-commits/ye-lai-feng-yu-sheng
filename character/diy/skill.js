@@ -155,27 +155,39 @@ xs_tanshi:{
     },
 },
 
-xxs_wumou:{
+xs_wumou:{
     locked:true,
-    forced:true,
+    enable:["chooseToUse","chooseToRespond"],
+
+    filterCard:function(card,player){
+        return get.type(card)=="trick" || get.type(card)=="delay";
+    },
+
+    position:"hes",
+
+    viewAs:{
+        name:"sha"
+    },
+
+    viewAsFilter:function(player){
+        return player.countCards("hes",function(card){
+            return get.type(card)=="trick" || get.type(card)=="delay";
+        })>0;
+    },
+
+    prompt:"将一张锦囊牌当【杀】使用或打出",
 
     mod:{
-        cardname:function(card,player){
-            if(!card || !card.name) return;
-
-            var info=lib.card[card.name];
-            if(!info) return;
-
-            if(info.type=="trick" || info.type=="delay"){
-                return "sha";
-            }
-        },
-
         cardUsable:function(card,player,num){
             if(card.name=="sha"){
                 return Infinity;
             }
         },
+    },
+
+    ai:{
+        respondSha:true,
+        order:4,
     },
 },
 
