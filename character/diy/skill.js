@@ -12,7 +12,7 @@ const skills = {
         player.draw();
     }
 }
-ftdh_jiangshi:{
+    ftdh_jiangshi:{
     locked:true,
     forced:true,
 
@@ -49,7 +49,7 @@ ftdh_jiangshi:{
     },
 
 },
-ftdh_feiha:{
+    ftdh_feiha:{
     enable:"phaseUse",
 
     usable:1,
@@ -105,7 +105,7 @@ ftdh_feiha:{
     }
 
 },
-ftdh_huawu:{
+    ftdh_huawu:{
     locked:true,
 
     forced:true,
@@ -122,7 +122,7 @@ ftdh_huawu:{
 
 },
 
-ftdh_huawu_disable:{
+    ftdh_huawu_disable:{
 
     mod:{
 
