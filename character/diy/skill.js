@@ -38,11 +38,11 @@ const skills = {
     content:function(){
 
         if(trigger.source&&trigger.source.name=="xiongshixiansheng"){
-            trigger.num++;
+            trigger.num--;
         }
 
         if(trigger.player&&trigger.player.name=="xiongshixiansheng"){
-            trigger.num--;
+            trigger.num++;
             if(trigger.num<0) trigger.num=0;
         }
 
