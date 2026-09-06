@@ -6,7 +6,16 @@ ye_lai_test:{
     hp:4,
     skills:["ye_skill"],
 },
-
+feitiandahama:[
+    "male",
+    "shen",
+    5,
+    [
+        "ftdh_jiangshi",
+        "ftdh_feiha",
+        "ftdh_huawu"
+    ]
+],
 };
 	
 
