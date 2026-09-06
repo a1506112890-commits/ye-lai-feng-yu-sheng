@@ -155,7 +155,7 @@ xs_tanshi:{
     },
 },
 
-xs_wumou:{
+xxs_wumou:{
     locked:true,
     forced:true,
 
@@ -171,13 +171,8 @@ xs_wumou:{
             }
         },
 
-        cardUsable:function(card,num,player){
-            if(!card || !card.name) return;
-
-            var info=lib.card[card.name];
-            if(!info) return;
-
-            if(info.type=="trick" || info.type=="delay"){
+        cardUsable:function(card,player,num){
+            if(card.name=="sha"){
                 return Infinity;
             }
         },
