@@ -11,7 +11,7 @@ const skills = {
     content:function(){
         player.draw();
     }
-}
+},
     ftdh_jiangshi:{
     locked:true,
     forced:true,
