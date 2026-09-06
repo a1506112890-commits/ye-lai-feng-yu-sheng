@@ -16,6 +16,17 @@ const characters = {
         "ftdh_huawu"
     ]
     },
+    xiongshixiansheng:{
+    sex:"male",
+    group:"qun",
+    hp:5,
+    skills:[
+        "xs_luoshi",
+        "xs_tanshi",
+        "xs_wumou"
+    ],
+},
+
 };
 	
 

@@ -21,6 +21,16 @@ ftdh_huawu:"画物",
 
 ftdh_huawu_info:
 "锁定技。你是被画出来的东西，濒死时不能被桃或酒救活。",
+xiongshixiansheng:"雄狮先生",
+
+xs_luoshi:"懦狮",
+xs_luoshi_info:"锁定技。当你一次受到3点及以上伤害时，弃置所有手牌并恢复3点体力。",
+
+xs_tanshi:"贪食",
+xs_tanshi_info:"锁定技。你的攻击马和防御马均视为桃。",
+
+xs_wumou:"无谋",
+xs_wumou_info:"锁定技。你的锦囊牌视为杀，你因该技能转化的杀不计入使用杀的次数。",
 
 
 

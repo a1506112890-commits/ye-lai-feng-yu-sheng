@@ -125,7 +125,54 @@ const skills = {
     },
 
 },
+xs_luoshi:{
+    locked:true,
+    forced:true,
 
+    trigger:{
+        player:"damageEnd",
+    },
+
+    filter:function(event,player){
+        return event.num>=3;
+    },
+
+    content:function(){
+        player.discard(player.getCards("h"));
+
+        player.recover(3);
+    },
+},
+xs_tanshi:{
+    locked:true,
+    forced:true,
+
+    mod:{
+        cardname:function(card,player){
+            if(card.name=="equip1"||card.name=="equip3"){
+                return "tao";
+            }
+        },
+    },
+},
+xs_wumou:{
+    locked:true,
+    forced:true,
+
+    mod:{
+        cardname:function(card,player){
+            if(get.type(card)=="trick"){
+                return "sha";
+            }
+        },
+
+        cardUsable:function(card,num,player){
+            if(get.type(card)=="trick"){
+                return Infinity;
+            }
+        },
+    },
+},
 
 
 
