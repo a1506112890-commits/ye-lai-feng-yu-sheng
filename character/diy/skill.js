@@ -138,8 +138,9 @@ xs_luoshi:{
     },
 
     content:function(){
-        player.discard(player.getCards("h"));
-
+        if(player.countCards("h")){
+    player.discard(player.getCards("h"));
+}
         player.recover(3);
     },
 },
@@ -161,15 +162,21 @@ xs_wumou:{
 
     mod:{
         cardname:function(card,player){
-            if(get.type(card)=="trick"){
+
+            if(get.type(card)=="trick" 
+            && card.name!="wuxie"){
                 return "sha";
             }
+
         },
 
         cardUsable:function(card,num,player){
-            if(get.type(card)=="trick"){
+
+            if(get.type(card)=="trick"
+            && card.name!="wuxie"){
                 return Infinity;
             }
+
         },
     },
 },
