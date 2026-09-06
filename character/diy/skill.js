@@ -51,58 +51,43 @@ const skills = {
 },
     ftdh_feiha:{
     enable:"phaseUse",
-
     usable:1,
 
-    filterCard:function(card){
-        return get.type(card)=="equip";
+    filter:function(event,player){
+        return player.countCards("e")>0;
     },
-
-    position:"he",
-
-    selectCard:1,
 
     filterTarget:function(card,player,target){
-        return target!=player;
+        return target!=player && target.countCards("he")>0;
     },
 
-    content:function(){
 
+    content:function(){
         "step 1"
 
-        target.chooseCard(
-            "飞蛤：请选择一张牌弃置",
+        //弃置自己的装备牌
+        player.chooseToDiscard(
+            "e",
             true
-        ).set("ai",function(card){
-            return -get.value(card);
-        });
+        );
 
 
         "step 2"
 
-        if(result.bool){
+        //随机弃置目标一张牌
+        event.card=target.getCards("he").randomGet();
 
-            var card=result.cards[0];
+        target.discard(event.card);
 
-            target.discard(card);
 
-            if(get.type(card)!="equip"){
+        "step 3"
 
-                target.damage();
-
-            }
-
+        //如果不是装备牌，造成伤害
+        if(get.type(event.card)!="equip"){
+            target.damage(1);
         }
 
     },
-
-    ai:{
-        order:8,
-
-        result:{
-            target:-1
-        }
-    }
 
 },
     ftdh_huawu:{
