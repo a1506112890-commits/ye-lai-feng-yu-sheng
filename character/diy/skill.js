@@ -51,19 +51,36 @@ const skills = {
 },
     ftdh_feiha:{
     enable:"phaseUse",
-filterCard:{
-    type:"equip",
-},
-selectCard:1,
-filterTarget:true,
-content:function(){
-    target.discard(target.getCards("h").randomGet());
 
-    if(!discardedCardIsEquip){
-        target.damage();
-    }
-}
+    filterCard:function(card){
+        return get.type(card)=="equip";
+    },
 
+    selectCard:1,
+
+    filterTarget:function(card,player,target){
+        return player!=target;
+    },
+
+    content:function(){
+
+        var card=target.getCards("h").randomGet();
+
+        if(card){
+            target.discard(card);
+
+            if(get.type(card)!="equip"){
+                target.damage(1);
+            }
+        }
+    },
+
+    ai:{
+        order:8,
+        result:{
+            target:-1,
+        },
+    },
 },
     ftdh_huawu:{
     locked:true,
