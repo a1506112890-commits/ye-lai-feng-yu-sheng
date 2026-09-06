@@ -51,43 +51,18 @@ const skills = {
 },
     ftdh_feiha:{
     enable:"phaseUse",
-    usable:1,
+filterCard:{
+    type:"equip",
+},
+selectCard:1,
+filterTarget:true,
+content:function(){
+    target.discard(target.getCards("h").randomGet());
 
-    filter:function(event,player){
-        return player.countCards("e")>0;
-    },
-
-    filterTarget:function(card,player,target){
-        return target!=player && target.countCards("he")>0;
-    },
-
-
-    content:function(){
-        "step 1"
-
-        //弃置自己的装备牌
-        player.chooseToDiscard(
-            "e",
-            true
-        );
-
-
-        "step 2"
-
-        //随机弃置目标一张牌
-        event.card=target.getCards("he").randomGet();
-
-        target.discard(event.card);
-
-
-        "step 3"
-
-        //如果不是装备牌，造成伤害
-        if(get.type(event.card)!="equip"){
-            target.damage(1);
-        }
-
-    },
+    if(!discardedCardIsEquip){
+        target.damage();
+    }
+}
 
 },
     ftdh_huawu:{
