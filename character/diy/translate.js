@@ -46,7 +46,21 @@ gjc_shitong_info:
 gjc_huawu:"画物",
 gjc_huawu_info:
 "锁定技。你是被画出来的东西，你进入濒死状态时不能被【桃】或【酒】救活。",
+laov:"牢V",
 
+lv_aichuan:"爱串",
+lv_aichuan_info:
+"锁定技。每个回合开始时，你获得一张“串”。“串”使用后销毁，不进入弃牌堆。",
+
+lv_kuangchuan:"狂串",
+lv_kuangchuan_info:
+"锁定技。若你有手牌且你的所有手牌均为“串”，则你防止所有伤害。",
+
+lv_yiqichuan:"一起串",
+lv_yiqichuan_info:
+"出牌阶段限一次，你可以将一张“串”交给一名其他角色，然后与其拼点。若你赢，你摸两张牌；若你输，其摸两张牌；若平局，你与其各摸三张牌并各回复2点体力。",
+
+lv_chuan:"串",
 
 
 

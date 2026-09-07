@@ -36,6 +36,16 @@ gongjiaoche_emo:{
         "gjc_huawu"
     ],
 },
+laov:{
+    sex:"male",
+    group:"wei",
+    hp:4,
+    skills:[
+        "lv_aichuan",
+        "lv_kuangchuan",
+        "lv_yiqichuan"
+    ],
+},
 
 
 };

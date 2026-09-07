@@ -314,7 +314,146 @@ gjc_huawu:{
         },
     },
 },
+lv_aichuan:{
+    trigger:{
+        player:"phaseBegin",
+    },
 
+    forced:true,
+
+    async content(event,trigger,player){
+
+        const card=game.createCard2(
+            "sha",
+            "none",
+            0
+        );
+
+        card.addGaintag("lv_chuan");
+
+        await player.gain(card,"gain2");
+    },
+
+    group:"lv_aichuan_clear",
+},
+lv_chuan_rule:{
+    charlotte:true,
+
+    mod:{
+        cardname(card,player){
+            if(card.hasGaintag &&
+               card.hasGaintag("lv_chuan")){
+                return "sha";
+            }
+        },
+    },
+},
+lv_chuan_effect:{
+    trigger:{
+        player:"useCardAfter",
+    },
+
+    forced:true,
+
+    filter(event,player){
+        return event.cards &&
+            event.cards.some(card=>
+                card.hasGaintag &&
+                card.hasGaintag("lv_chuan")
+            );
+    },
+
+    async content(event,trigger,player){
+
+        game.countPlayer(function(current){
+            current.say("你再这么串我真受不了嘞");
+        });
+
+        for(const card of trigger.cards){
+            if(card.hasGaintag &&
+               card.hasGaintag("lv_chuan")){
+
+                card.remove();
+
+            }
+        }
+    },
+},
+lv_kuangchuan:{
+    locked:true,
+    forced:true,
+
+    trigger:{
+        player:"damageBegin4",
+    },
+
+    filter(event,player){
+
+        const cards=player.getCards("h");
+
+        return cards.length>0 &&
+            cards.every(card=>
+                card.hasGaintag &&
+                card.hasGaintag("lv_chuan")
+            );
+    },
+
+    content(){
+        trigger.cancel();
+    },
+},
+lv_yiqichuan:{
+    enable:"phaseUse",
+    usable:1,
+
+    filter(event,player){
+        return player.hasCard(card=>
+            card.hasGaintag &&
+            card.hasGaintag("lv_chuan"),
+            "h"
+        );
+    },
+
+    filterCard(card){
+        return card.hasGaintag &&
+            card.hasGaintag("lv_chuan");
+    },
+
+    position:"h",
+
+    discard:false,
+    lose:false,
+
+    filterTarget(card,player,target){
+        return target!=player;
+    },
+
+    async content(event,trigger,player){
+
+        const target=event.target;
+        const card=event.cards[0];
+
+        await player.give(card,target);
+
+        const result=
+            await player.chooseToCompare(target)
+                .forResult();
+
+        if(result.bool){
+            await player.draw(2);
+        }
+        else if(result.tie){
+            await player.draw(3);
+            await target.draw(3);
+
+            await player.recover(2);
+            await target.recover(2);
+        }
+        else{
+            await target.draw(2);
+        }
+    },
+},
 
 
 
