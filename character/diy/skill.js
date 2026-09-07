@@ -318,67 +318,97 @@ lv_aichuan:{
     trigger:{
         player:"phaseBegin",
     },
-
     forced:true,
 
-    async content(event,trigger,player){
+    init:function(player){
+        if(!lib.card.lv_chuan_card){
+            lib.card.lv_chuan_card={
+                type:"basic",
+                enable:true,
+                notarget:true,
 
+                async content(event,trigger,player){
+                    game.countPlayer(function(current){
+                        current.say("你再这么串我真受不了嘞");
+                    });
+                },
+
+                ai:{
+                    order:1,
+                    useful:1,
+                    value:1,
+                    result:{
+                        player:0,
+                    },
+                },
+            };
+
+            lib.translate.lv_chuan_card="串";
+            lib.translate.lv_chuan_card_info=
+                "出牌阶段使用。所有角色说：“你再这么串我真受不了嘞”。使用后销毁。";
+        }
+    },
+
+    async content(event,trigger,player){
         const card=game.createCard2(
-            "sha",
+            "lv_chuan_card",
             "none",
             0
         );
 
-        card.addGaintag("lv_chuan");
+        card.storage.lv_chuan=true;
 
         await player.gain(card,"gain2");
     },
 
-    group:"lv_aichuan_clear",
+    group:"lv_chuan_destroy",
 },
-lv_chuan_rule:{
+lv_chuan_destroy:{
     charlotte:true,
 
-    mod:{
-        cardname(card,player){
-            if(card.hasGaintag &&
-               card.hasGaintag("lv_chuan")){
-                return "sha";
-            }
-        },
-    },
-},
-lv_chuan_effect:{
     trigger:{
-        player:"useCardAfter",
+        global:[
+            "useCardAfter",
+            "cardsDiscardAfter"
+        ],
     },
 
     forced:true,
+    popup:false,
 
-    filter(event,player){
-        return event.cards &&
-            event.cards.some(card=>
-                card.hasGaintag &&
-                card.hasGaintag("lv_chuan")
-            );
+    filter:function(event,player){
+        if(!event.cards) return false;
+
+        return event.cards.some(function(card){
+            return card &&
+                (
+                    card.name=="lv_chuan_card" ||
+                    (
+                        card.storage &&
+                        card.storage.lv_chuan
+                    )
+                );
+        });
     },
 
     async content(event,trigger,player){
-
-        game.countPlayer(function(current){
-            current.say("你再这么串我真受不了嘞");
-        });
-
         for(const card of trigger.cards){
-            if(card.hasGaintag &&
-               card.hasGaintag("lv_chuan")){
-
+            if(
+                card &&
+                (
+                    card.name=="lv_chuan_card" ||
+                    (
+                        card.storage &&
+                        card.storage.lv_chuan
+                    )
+                )
+            ){
                 card.remove();
-
             }
         }
     },
 },
+
 lv_kuangchuan:{
     locked:true,
     forced:true,
@@ -387,18 +417,17 @@ lv_kuangchuan:{
         player:"damageBegin4",
     },
 
-    filter(event,player){
-
+    filter:function(event,player){
         const cards=player.getCards("h");
 
-        return cards.length>0 &&
-            cards.every(card=>
-                card.hasGaintag &&
-                card.hasGaintag("lv_chuan")
-            );
+        if(cards.length==0) return false;
+
+        return cards.every(function(card){
+            return card.name=="lv_chuan_card";
+        });
     },
 
-    content(){
+    content:function(){
         trigger.cancel();
     },
 },
@@ -406,52 +435,55 @@ lv_yiqichuan:{
     enable:"phaseUse",
     usable:1,
 
-    filter(event,player){
-        return player.hasCard(card=>
-            card.hasGaintag &&
-            card.hasGaintag("lv_chuan"),
-            "h"
-        );
+    filter:function(event,player){
+        return player.countCards("h",function(card){
+            return card.name=="lv_chuan_card";
+        })>0;
     },
 
-    filterCard(card){
-        return card.hasGaintag &&
-            card.hasGaintag("lv_chuan");
+    filterCard:function(card){
+        return card.name=="lv_chuan_card";
     },
 
     position:"h",
-
     discard:false,
     lose:false,
 
-    filterTarget(card,player,target){
+    filterTarget:function(card,player,target){
         return target!=player;
     },
 
     async content(event,trigger,player){
-
         const target=event.target;
-        const card=event.cards[0];
+        const chuan=event.cards[0];
 
-        await player.give(card,target);
+        await player.give(chuan,target);
 
         const result=
-            await player.chooseToCompare(target)
-                .forResult();
+            await player.chooseToCompare(target).forResult();
 
-        if(result.bool){
-            await player.draw(2);
-        }
-        else if(result.tie){
+        if(result.tie){
             await player.draw(3);
             await target.draw(3);
 
             await player.recover(2);
             await target.recover(2);
         }
+        else if(result.bool){
+            await player.draw(2);
+        }
         else{
             await target.draw(2);
         }
+    },
+
+    ai:{
+        order:7,
+        result:{
+            target:function(player,target){
+                return -1;
+            },
+        },
     },
 },
 
