@@ -1194,315 +1194,360 @@ sf_daguo_maxhp:{
 
 },
 sf_daguo_get:{
-
     trigger:{
         global:"cardsDiscardAfter",
     },
 
-
     direct:true,
-
 
     filter:function(event,player){
 
+        if(!event.cards || !event.cards.length){
+            return false;
+        }
+
+        // 如果这些牌来自“使用牌”的结算，则不能捡
+        var parent=event.getParent();
+
+        while(parent){
+
+            if(
+                parent.name=="useCard" ||
+                parent.name=="useCardAfter"
+            ){
+                return false;
+            }
+
+            parent=parent.getParent();
+        }
+
         return event.cards.some(function(card){
-
             return card.name=="tao";
-
         });
-
     },
-
 
     content:function(){
 
         var cards=trigger.cards.filter(function(card){
 
-            return card.name=="tao";
+            if(card.name!="tao"){
+                return false;
+            }
 
+            // 必须现在确实还在弃牌区
+            return get.position(card,true)=="d";
         });
 
-
-        if(cards.length){
-
-            player.gain(
-                cards,
-                "gain2"
-            );
-
+        if(!cards.length){
+            return;
         }
-
-    },
-
-},
-
-sf_zhengdan:{
-
-    global:"sf_zhengdan_button",
-
-},
-sf_zhengdan_button:{
-
-    enable:"phaseUse",
-
-    usable:1,
-
-
-    filter:function(event,player){
-
-        return game.hasPlayer(function(current){
-
-            return current.hasSkill("sf_zhengdan");
-
-        });
-
-    },
-
-
-    content:function(){
 
         "step 0"
 
-        event.sf=game.findPlayer(function(current){
-
-            return current.hasSkill("sf_zhengdan");
-
-        });
-
+        event.daguo_cards=cards;
 
         player.chooseBool(
-            "是否寻找名侦探橘雪莉发动随机事件？"
-        );
-
+            "大果：是否捡起"+get.translation(cards)+"？"
+        ).set("ai",function(){
+            return true;
+        });
 
         "step 1"
 
-
         if(result.bool){
 
-            event.sf.draw();
+            player.logSkill("sf_daguo");
 
-
-            "step 2"
-
-
-            event.sf.throwDice(6);
-
-
+            player.gain(
+                event.daguo_cards,
+                "gain2"
+            );
         }
-
     },
-
 },
-sf_zhengdan_effect:{
 
-    trigger:{
-        player:"throwDiceEnd",
+sf_zhengdan:{
+    global:"sf_zhengdan_button",
+},
+sf_zhengdan_button:{
+    enable:"phaseUse",
+    usable:1,
+
+    filter:function(event,player){
+        return game.hasPlayer(function(current){
+            return current.hasSkill("sf_zhengdan");
+        });
     },
-
-    forced:true,
-
 
     content:function(){
-
-        var num=trigger.num;
-
-
-        switch(num){
-
-
-            // 1点：倒霉
-            case 1:
-
-                player.say("真倒霉");
-
-                player.damage(
-                    1,
-                    "thunder"
-                );
-
-                break;
-
-
-
-            // 2点：全员弃牌
-            case 2:
-
-                game.countPlayer(function(current){
-
-                    current.say("什么鬼");
-
-                    if(current.countCards("he")>0){
-
-                        current.discard(
-                            current.getCards("he").randomGet()
-                        );
-
-                    }
-
-                });
-
-                break;
-
-
-
-            // 3点：全员摸牌
-            case 3:
-
-                game.countPlayer(function(current){
-
-                    current.say("真lucky");
-
-                    current.draw();
-
-                });
-
-                break;
-
-
-
-            // 4点：当前角色翻面
-            case 4:
-
-                player.say("这sf太坏了");
-
-                player.turnOver();
-
-                player.draw(2);
-
-                break;
-
-
-
-            // 5点：随机事件
-            case 5:
-
-                var list=[
-                    "damage",
-                    "recover",
-                    "turn",
-                    "draw"
-                ];
-
-
-                var result=list.randomGet();
-
-
-                if(result=="damage"){
-
-                    var targets=game.filterPlayer(function(current){
-
-                        return current!=player;
-
-                    });
-
-
-                    if(targets.length){
-
-                        targets.randomGet().damage(
-                            1,
-                            "fire"
-                        );
-
-                    }
-
-                }
-
-
-
-                if(result=="recover"){
-
-                    player.recover(1);
-
-                }
-
-
-
-                if(result=="turn"){
-
-                    var targets=game.filterPlayer(function(current){
-
-                        return current!=player;
-
-                    });
-
-
-                    if(targets.length){
-
-                        targets.randomGet().turnOver();
-
-                    }
-
-                }
-
-
-
-                if(result=="draw"){
-
-                    player.draw(2);
-
-                }
-
-
-
-                player.say(
-                    "不是我害了你，是这个乱世害了你啊"
-                );
-
-
-                break;
-
-
-
-            // 6点：中大奖
-            case 6:
-
-
-                player.say(
-                    "中大奖了！"
-                );
-
-
-                player.draw(3);
-
-
-                player.recover(1);
-
-
-
-                // 随机补满装备区
-                var equips=[
-                    "equip1",
-                    "equip2",
-                    "equip3",
-                    "equip4",
-                    "equip5"
-                ];
-
-
-                for(var i=0;i<equips.length;i++){
-
-                    if(!player.getEquip(equips[i])){
-
-
-                        var card=game.createCard(
-                            equips[i]
-                        );
-
-
-                        player.equip(card);
-
-                    }
-
-                }
-
-
-                break;
-
+        "step 0"
+
+        event.sf=game.findPlayer(function(current){
+            return current.hasSkill("sf_zhengdan");
+        });
+
+        if(!event.sf){
+            event.finish();
+            return;
         }
 
+        player.chooseBool(
+            "是否要找名侦探橘雪莉来搞点随机事件૮◉▿▿▿◉ა"
+        ).set("ai",function(){
+            return true;
+        });
+
+        "step 1"
+
+        if(!result.bool){
+            event.finish();
+            return;
+        }
+
+        // SF摸一张
+        event.sf.draw();
+
+        // 用当前回合角色投骰子，更符合“他点击搞事”
+        player.throwDice();
+
+        "step 2"
+
+        var num=event.num;
+
+        game.log(
+            player,
+            "的【蒸蛋】骰子结果为",
+            "#y"+num
+        );
+
+        // ===== 1点 =====
+        if(num==1){
+
+            player.say("真倒霉");
+
+            // 无来源雷电伤害
+            player.damage(
+                1,
+                "thunder",
+                "nosource"
+            );
+
+            event.finish();
+            return;
+        }
+
+        // ===== 2点 =====
+        if(num==2){
+
+            event.zd_list=game.filterPlayer();
+            event.zd_index=0;
+
+            game.countPlayer(function(current){
+                current.say("什么鬼");
+            });
+
+            event.goto(3);
+            return;
+        }
+
+        // ===== 3点 =====
+        if(num==3){
+
+            game.countPlayer(function(current){
+                current.say("真lucky");
+                current.draw();
+            });
+
+            event.finish();
+            return;
+        }
+
+        // ===== 4点 =====
+        if(num==4){
+
+            player.say("这sf太坏了");
+
+            player.turnOver();
+            player.draw();
+
+            event.finish();
+            return;
+        }
+
+        // ===== 5点 =====
+        if(num==5){
+
+            event.sf.say(
+                "不是我害了你，是这个乱世害了你啊"
+            );
+
+            event.zd_all=game.filterPlayer();
+
+            // 火伤目标
+            event.zd_fire=
+                event.zd_all.randomGet();
+
+            // 回血目标
+            event.zd_recover=
+                event.zd_all.randomGet();
+
+            // 翻面目标
+            event.zd_turn=
+                event.zd_all.randomGet();
+
+            // 摸牌目标
+            event.zd_draw=
+                event.zd_all.randomGet();
+
+            event.zd_fire.damage(
+                1,
+                "fire",
+                "nosource"
+            );
+
+            event.goto(5);
+            return;
+        }
+
+        // ===== 6点 =====
+        if(num==6){
+
+            player.say("中大奖了！");
+
+            player.draw(3);
+            player.recover(1);
+
+            event.goto(10);
+            return;
+        }
+
+        event.finish();
+
+
+        // =================================================
+        // 2点：所有角色依次随机弃一张牌
+        // =================================================
+
+        "step 3"
+
+        if(event.zd_index>=event.zd_list.length){
+            event.finish();
+            return;
+        }
+
+        event.zd_current=
+            event.zd_list[event.zd_index];
+
+        if(event.zd_current.countCards("he")>0){
+
+            var card=
+                event.zd_current.getCards("he").randomGet();
+
+            event.zd_current.discard(card);
+        }
+
+        event.zd_index++;
+
+        event.goto(3);
+
+
+        // =================================================
+        // 5点：剩下三个随机效果
+        // =================================================
+
+        "step 5"
+
+        if(
+            event.zd_recover &&
+            event.zd_recover.isIn()
+        ){
+            event.zd_recover.recover(1);
+        }
+
+        "step 6"
+
+        if(
+            event.zd_turn &&
+            event.zd_turn.isIn()
+        ){
+            event.zd_turn.turnOver();
+        }
+
+        "step 7"
+
+        if(
+            event.zd_draw &&
+            event.zd_draw.isIn()
+        ){
+            event.zd_draw.draw(2);
+        }
+
+        event.finish();
+
+
+        // =================================================
+        // 6点：随机补满空装备栏
+        // =================================================
+
+        "step 10"
+
+        event.zd_slots=[
+            "equip1",
+            "equip2",
+            "equip3",
+            "equip4",
+            "equip5"
+        ];
+
+        event.zd_slotIndex=0;
+
+        "step 11"
+
+        if(event.zd_slotIndex>=event.zd_slots.length){
+            event.finish();
+            return;
+        }
+
+        var subtype=
+            event.zd_slots[event.zd_slotIndex];
+
+        event.zd_slotIndex++;
+
+        // 此装备栏已有装备，跳过
+        if(player.getEquip(subtype)){
+            event.goto(11);
+            return;
+        }
+
+        // 从牌堆中找一张对应类型装备
+        var equip=get.cardPile(function(card){
+
+            if(!card || !card.name){
+                return false;
+            }
+
+            var info=lib.card[card.name];
+
+            return (
+                info &&
+                info.type=="equip" &&
+                info.subtype==subtype
+            );
+        });
+
+        if(equip){
+            player.equip(equip);
+        }
+
+        event.goto(11);
     },
 
+    ai:{
+        order:1,
+        result:{
+            player:0.5,
+        },
+    },
 },
 
 
