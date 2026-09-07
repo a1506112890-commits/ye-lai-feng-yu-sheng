@@ -1206,48 +1206,40 @@ sf_daguo_get:{
             return false;
         }
 
-        // 如果这些牌来自“使用牌”的结算，则不能捡
-        var parent=event.getParent();
+        // 如果这批牌来自“使用牌”的流程，则不能捡
+        var useEvent=event.getParent("useCard");
 
-        while(parent){
-
-            if(
-                parent.name=="useCard" ||
-                parent.name=="useCardAfter"
-            ){
-                return false;
-            }
-
-            parent=parent.getParent();
+        if(useEvent){
+            return false;
         }
 
         return event.cards.some(function(card){
-            return card.name=="tao";
+            return (
+                card &&
+                card.name=="tao" &&
+                get.position(card,true)=="d"
+            );
         });
     },
 
     content:function(){
+        "step 0"
 
-        var cards=trigger.cards.filter(function(card){
-
-            if(card.name!="tao"){
-                return false;
-            }
-
-            // 必须现在确实还在弃牌区
-            return get.position(card,true)=="d";
+        event.daguo_cards=trigger.cards.filter(function(card){
+            return (
+                card &&
+                card.name=="tao" &&
+                get.position(card,true)=="d"
+            );
         });
 
-        if(!cards.length){
+        if(!event.daguo_cards.length){
+            event.finish();
             return;
         }
 
-        "step 0"
-
-        event.daguo_cards=cards;
-
         player.chooseBool(
-            "大果：是否捡起"+get.translation(cards)+"？"
+            "大果：是否捡起"+get.translation(event.daguo_cards)+"？"
         ).set("ai",function(){
             return true;
         });
