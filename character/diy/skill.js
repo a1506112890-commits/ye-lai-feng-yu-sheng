@@ -414,21 +414,24 @@ lv_kuangchuan:{
     forced:true,
 
     trigger:{
-        player:"damageBegin4",
+        player:"damageBegin3",
     },
 
     filter:function(event,player){
         const cards=player.getCards("h");
 
-        if(cards.length==0) return false;
-
-        return cards.every(function(card){
-            return card.name=="lv_chuan_card";
-        });
+        return cards.length>0 &&
+            cards.every(function(card){
+                return card.name=="lv_chuan_card";
+            });
     },
 
     content:function(){
-        trigger.cancel();
+        trigger.num--;
+
+        if(trigger.num<0){
+            trigger.num=0;
+        }
     },
 },
 lv_yiqichuan:{

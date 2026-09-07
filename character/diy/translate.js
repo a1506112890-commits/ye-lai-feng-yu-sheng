@@ -55,7 +55,7 @@ lv_aichuan_info:
 
 lv_kuangchuan:"狂串",
 lv_kuangchuan_info:
-"锁定技。若你有手牌且所有手牌均为【串】，你防止所有伤害。",
+"锁定技。若你有手牌且所有手牌均为【串】，你受到的所有伤害-1。",
 
 lv_yiqichuan:"一起串",
 lv_yiqichuan_info:
