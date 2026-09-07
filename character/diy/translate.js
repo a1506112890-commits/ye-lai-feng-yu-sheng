@@ -31,7 +31,21 @@ xs_tanshi_info:"锁定技。你的攻击马和防御马均视为桃。",
 
 xs_wumou:"无谋",
 xs_wumou_info:"你的锦囊牌可以当杀，你的杀不受次数限制。",
+gongjiaoche_emo:"公交车恶魔",
 
+gjc_youhua:"幼化",
+gjc_youhua_info:
+"当你使用牌指定其他角色为目标时，你可以令其获得1枚“孩”标记。",
+
+gjc_hai:"孩",
+
+gjc_shitong:"食童",
+gjc_shitong_info:
+"出牌阶段限一次，你可以选择一名拥有至少5枚“孩”标记的其他角色，移去其所有“孩”标记，对其造成2点伤害，然后你回复2点体力。",
+
+gjc_huawu:"画物",
+gjc_huawu_info:
+"锁定技。你是被画出来的东西，你进入濒死状态时不能被【桃】或【酒】救活。",
 
 
 

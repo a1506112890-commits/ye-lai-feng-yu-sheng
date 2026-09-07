@@ -26,6 +26,17 @@ const characters = {
         "xs_wumou"
     ],
 },
+gongjiaoche_emo:{
+    sex:"none",
+    group:"shen",
+    hp:5,
+    skills:[
+        "gjc_youhua",
+        "gjc_shitong",
+        "gjc_huawu"
+    ],
+},
+
 
 };
 	

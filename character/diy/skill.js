@@ -190,6 +190,130 @@ xs_wumou:{
         order:4,
     },
 },
+gjc_youhua:{
+    trigger:{
+        player:"useCardToPlayered",
+    },
+
+    direct:true,
+
+    filter:function(event,player){
+        return event.target && event.target!=player;
+    },
+
+    content:function(){
+        "step 0"
+
+        player.chooseBool(
+            "是否对"+get.translation(trigger.target)+"发动【幼化】，令其获得1枚“孩”标记？"
+        ).set("ai",function(){
+            return get.attitude(player,trigger.target)<0;
+        });
+
+        "step 1"
+
+        if(result.bool){
+            player.logSkill("gjc_youhua",trigger.target);
+
+            trigger.target.addMark(
+                "gjc_hai",
+                1
+            );
+        }
+    },
+
+    ai:{
+        expose:0.1,
+    },
+},
+gjc_hai:{
+    charlotte:true,
+    mark:true,
+    marktext:"孩",
+
+    intro:{
+        name:"孩",
+        content:"当前有#枚“孩”标记",
+    },
+},
+gjc_shitong:{
+    enable:"phaseUse",
+    usable:1,
+
+    filter:function(event,player){
+        return game.hasPlayer(function(current){
+            return current!=player &&
+                current.countMark("gjc_hai")>=5;
+        });
+    },
+
+    filterTarget:function(card,player,target){
+        return target!=player &&
+            target.countMark("gjc_hai")>=5;
+    },
+
+    content:function(){
+        "step 0"
+
+        var num=target.countMark("gjc_hai");
+
+        if(num>0){
+            target.removeMark(
+                "gjc_hai",
+                num
+            );
+        }
+
+        target.damage(2,player);
+
+        "step 1"
+
+        player.recover(2);
+    },
+
+    ai:{
+        order:9,
+        result:{
+            target:-2,
+            player:2,
+        },
+    },
+},
+gjc_huawu:{
+    locked:true,
+    forced:true,
+
+    trigger:{
+        player:"dying",
+    },
+
+    content:function(){
+        player.addTempSkill(
+            "gjc_huawu_disable"
+        );
+    },
+
+    subSkill:{
+        disable:{
+            charlotte:true,
+
+            mod:{
+                cardSavable:function(card,player,target){
+                    if(
+                        target &&
+                        target.hasSkill("gjc_huawu") &&
+                        (
+                            card.name=="tao" ||
+                            card.name=="jiu"
+                        )
+                    ){
+                        return false;
+                    }
+                },
+            },
+        },
+    },
+},
 
 
 
