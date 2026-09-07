@@ -46,6 +46,18 @@ laov:{
         "lv_yiqichuan"
     ],
 },
+yingsanshi:{
+    sex:"female",
+    group:"shen",
+    hp:3,
+    skills:[
+        "ys_dengji",
+        "ys_feileishen",
+        "ys_zhongmu",
+        "ys_maomao",
+        "ys_yelaifengyusheng"
+    ],
+},
 
 
 };
