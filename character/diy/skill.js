@@ -1108,10 +1108,446 @@ ys_yelaifengyusheng:{
     },
 },
 
+sf_daguo:{
+
+    trigger:{
+        player:"recoverBegin",
+    },
+
+    forced:true,
+
+    filter:function(event,player){
+
+        return (
+            event.card &&
+            event.card.name=="tao"
+        );
+
+    },
+
+
+    content:function(){
+
+        trigger.num++;
+
+    },
+
+
+    group:[
+        "sf_daguo_maxhp",
+        "sf_daguo_get"
+    ],
+
+},
+sf_daguo_maxhp:{
+
+    enable:"phaseUse",
+
+    usable:1,
+
+
+    filter:function(event,player){
+
+        return (
+            player.hp==player.maxHp &&
+            player.countCards("h",function(card){
+
+                return card.name=="tao";
+
+            })>0
+        );
+
+    },
+
+
+    filterCard:function(card){
+
+        return card.name=="tao";
+
+    },
+
+
+    position:"h",
+
+
+    selectCard:1,
+
+
+    content:function(){
+
+        player.gainMaxHp(1);
+
+        player.draw(1);
+
+    },
+
+
+    ai:{
+
+        order:9,
+
+        result:{
+            player:1,
+        },
+
+    },
+
+},
+sf_daguo_get:{
+
+    trigger:{
+        global:"cardsDiscardAfter",
+    },
+
+
+    direct:true,
+
+
+    filter:function(event,player){
+
+        return event.cards.some(function(card){
+
+            return card.name=="tao";
+
+        });
+
+    },
+
+
+    content:function(){
+
+        var cards=trigger.cards.filter(function(card){
+
+            return card.name=="tao";
+
+        });
+
+
+        if(cards.length){
+
+            player.gain(
+                cards,
+                "gain2"
+            );
+
+        }
+
+    },
+
+},
+
+sf_zhengdan:{
+
+    global:"sf_zhengdan_button",
+
+},
+sf_zhengdan_button:{
+
+    enable:"phaseUse",
+
+    usable:1,
+
+
+    filter:function(event,player){
+
+        return game.hasPlayer(function(current){
+
+            return current.hasSkill("sf_zhengdan");
+
+        });
+
+    },
+
+
+    content:function(){
+
+        "step 0"
+
+        event.sf=game.findPlayer(function(current){
+
+            return current.hasSkill("sf_zhengdan");
+
+        });
+
+
+        player.chooseBool(
+            "是否寻找名侦探橘雪莉发动随机事件？"
+        );
+
+
+        "step 1"
+
+
+        if(result.bool){
+
+            event.sf.draw();
+
+
+            "step 2"
+
+
+            event.sf.throwDice(6);
+
+
+        }
+
+    },
+
+},
+sf_zhengdan_effect:{
+
+    trigger:{
+        player:"throwDiceEnd",
+    },
+
+    forced:true,
+
+
+    content:function(){
+
+        var num=trigger.num;
+
+
+        switch(num){
+
+
+            // 1点：倒霉
+            case 1:
+
+                player.say("真倒霉");
+
+                player.damage(
+                    1,
+                    "thunder"
+                );
+
+                break;
 
 
 
+            // 2点：全员弃牌
+            case 2:
 
+                game.countPlayer(function(current){
+
+                    current.say("什么鬼");
+
+                    if(current.countCards("he")>0){
+
+                        current.discard(
+                            current.getCards("he").randomGet()
+                        );
+
+                    }
+
+                });
+
+                break;
+
+
+
+            // 3点：全员摸牌
+            case 3:
+
+                game.countPlayer(function(current){
+
+                    current.say("真lucky");
+
+                    current.draw();
+
+                });
+
+                break;
+
+
+
+            // 4点：当前角色翻面
+            case 4:
+
+                player.say("这sf太坏了");
+
+                player.turnOver();
+
+                player.draw(2);
+
+                break;
+
+
+
+            // 5点：随机事件
+            case 5:
+
+                var list=[
+                    "damage",
+                    "recover",
+                    "turn",
+                    "draw"
+                ];
+
+
+                var result=list.randomGet();
+
+
+                if(result=="damage"){
+
+                    var targets=game.filterPlayer(function(current){
+
+                        return current!=player;
+
+                    });
+
+
+                    if(targets.length){
+
+                        targets.randomGet().damage(
+                            1,
+                            "fire"
+                        );
+
+                    }
+
+                }
+
+
+
+                if(result=="recover"){
+
+                    player.recover(1);
+
+                }
+
+
+
+                if(result=="turn"){
+
+                    var targets=game.filterPlayer(function(current){
+
+                        return current!=player;
+
+                    });
+
+
+                    if(targets.length){
+
+                        targets.randomGet().turnOver();
+
+                    }
+
+                }
+
+
+
+                if(result=="draw"){
+
+                    player.draw(2);
+
+                }
+
+
+
+                player.say(
+                    "不是我害了你，是这个乱世害了你啊"
+                );
+
+
+                break;
+
+
+
+            // 6点：中大奖
+            case 6:
+
+
+                player.say(
+                    "中大奖了！"
+                );
+
+
+                player.draw(3);
+
+
+                player.recover(1);
+
+
+
+                // 随机补满装备区
+                var equips=[
+                    "equip1",
+                    "equip2",
+                    "equip3",
+                    "equip4",
+                    "equip5"
+                ];
+
+
+                for(var i=0;i<equips.length;i++){
+
+                    if(!player.getEquip(equips[i])){
+
+
+                        var card=game.createCard(
+                            equips[i]
+                        );
+
+
+                        player.equip(card);
+
+                    }
+
+                }
+
+
+                break;
+
+        }
+
+    },
+
+},
+
+
+sf_hongquan:{
+    limited:true,
+
+    skillAnimation:true,
+
+    animationColor:"fire",
+
+    enable:"phaseUse",
+
+    filterTarget:function(card,player,target){
+
+        return (
+            target!=player &&
+            target.name!="yingsanshi"
+        );
+
+    },
+
+    content:function(){
+
+        player.awakenSkill(
+            "sf_hongquan"
+        );
+
+
+        var num=
+        player.maxHp-player.hp-1;
+
+
+        if(num<1){
+            num=1;
+        }
+
+
+        target.damage(
+            num,
+            "normal",
+            player
+        );
+
+    },
+},
 
 
 

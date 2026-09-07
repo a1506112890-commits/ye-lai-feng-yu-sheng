@@ -58,7 +58,16 @@ yingsanshi:{
         "ys_yelaifengyusheng"
     ],
 },
-
+sf:{
+    sex:"male",
+    group:"wei",
+    hp:4,
+    skills:[
+        "sf_daguo",
+        "sf_zhengdan",
+        "sf_hongquan"
+    ],
+},
 
 };
 	
