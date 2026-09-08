@@ -1334,37 +1334,37 @@ sf_zhengdan_button:{
 
         var num=event.num;
 
-        game.log(
-            player,
-            "的【蒸蛋】骰子结果为",
-            "#y"+num
-        );
+game.log(
+    player,
+    "的【蒸蛋】骰子结果为",
+    "#y"+num
+);
 
-        // ===== 1点 =====
-        if(num==1){
 
-            player.say("真倒霉");
+// ===== 1点 =====
+if(num==1){
 
-            // 无来源雷电伤害
-            player.damage(
-                1,
-                "thunder",
-                "nosource"
-            );
+    player.say("真倒霉");
 
-            event.finish();
-            return;
-        }
+    player.damage(
+        1,
+        "thunder",
+        "nosource"
+    );
 
-        // ===== 2点 =====
-        // ===== 2点 =====
-     // ===== 2点 =====
+    event.finish();
+    return;
+}
+
+
+// ===== 2点 =====
 if(num==2){
 
     var enemies=event.sf.getEnemies().filter(function(current){
         return current.isIn();
     });
 
+    // 没有敌人，这个骰面不产生效果
     if(!enemies.length){
         event.finish();
         return;
@@ -1372,7 +1372,7 @@ if(num==2){
 
     event.zd_enemy=enemies.randomGet();
 
-    // 随机一名SF的敌人受到1点无来源伤害
+    // 随机一名SF敌人受到1点无来源普通伤害
     event.zd_enemy.damage(
         1,
         "normal",
@@ -1382,19 +1382,19 @@ if(num==2){
     event.goto(3);
     return;
 }
-        }
 
-        // ===== 3点 =====
-        if(num==3){
 
-            game.countPlayer(function(current){
-                current.say("真lucky");
-                current.draw();
-            });
+// ===== 3点 =====
+if(num==3){
 
-            event.finish();
-            return;
-        }
+    game.countPlayer(function(current){
+        current.say("真lucky");
+        current.draw();
+    });
+
+    event.finish();
+    return;
+}
 
         // ===== 4点 =====
         if(num==4){
@@ -1472,7 +1472,7 @@ if(num==2){
         // =================================================
         // 5点：剩下三个随机效果
         // =================================================
-      "step 3"
+   "step 3"
 
 if(
     event.zd_enemy &&
@@ -1487,6 +1487,7 @@ if(
 }
 
 event.finish();
+return;
       "step 5"
 
 if(
