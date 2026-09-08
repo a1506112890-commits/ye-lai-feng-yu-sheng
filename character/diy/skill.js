@@ -1627,7 +1627,437 @@ sf_hongquan:{
     },
 },
 
+// ===== 鸫溟 =====
 
+dm_gaoshu:{
+    trigger:{
+        player:"damageEnd",
+    },
+
+    forced:true,
+
+    init:function(player){
+
+        // 动态注册“薯条”
+        if(!lib.card.dm_shutiao){
+
+            lib.card.dm_shutiao={
+                type:"trick",
+                enable:true,
+                notarget:true,
+
+                // 稳定版：使用后直接销毁，不进入弃牌堆/牌堆
+                destroy:true,
+
+                content:function(){
+
+                    // 使用者摸一张牌
+                    player.draw();
+
+                    // 鸫溟获得1枚“薯”
+                    var owner=game.findPlayer(function(current){
+                        return current.name=="dongming";
+                    });
+
+                    if(owner){
+                        owner.addMark(
+                            "dm_shu",
+                            1
+                        );
+                    }
+                },
+
+                ai:{
+                    order:8,
+                    useful:5,
+                    value:5,
+                    result:{
+                        player:1,
+                    },
+                },
+            };
+
+            lib.translate.dm_shutiao="薯条";
+            lib.translate.dm_shutiao_info=
+            "锦囊牌。使用后你摸一张牌，并令鸫溟获得1枚“薯”标记。此牌使用后销毁。";
+        }
+    },
+
+    // 每受到1点伤害获得1张薯条
+    content:function(){
+
+        var num=trigger.num;
+
+        if(num<1){
+            num=1;
+        }
+
+        var cards=[];
+
+        for(var i=0;i<num;i++){
+
+            cards.push(
+                game.createCard2(
+                    "dm_shutiao",
+                    "none",
+                    0
+                )
+            );
+        }
+
+        player.gain(
+            cards,
+            "gain2"
+        );
+    },
+
+    group:[
+        "dm_gaoshu_lebu_use",
+        "dm_gaoshu_lebu_discard",
+        "dm_gaoshu_die"
+    ],
+},
+
+// 使用或打出【乐不思蜀】
+dm_gaoshu_lebu_use:{
+    trigger:{
+        player:[
+            "useCardAfter",
+            "respondAfter"
+        ],
+    },
+
+    forced:true,
+    popup:false,
+
+    filter:function(event,player){
+
+        return (
+            event.card &&
+            event.card.name=="lebu"
+        );
+    },
+
+    content:function(){
+
+        var card=game.createCard2(
+            "dm_shutiao",
+            "none",
+            0
+        );
+
+        player.gain(
+            card,
+            "gain2"
+        );
+    },
+},
+
+// 弃置【乐不思蜀】
+dm_gaoshu_lebu_discard:{
+    trigger:{
+        player:"loseAfter",
+    },
+
+    forced:true,
+    popup:false,
+
+    filter:function(event,player){
+
+        if(event.type!="discard"){
+            return false;
+        }
+
+        var cards=event.cards2 || event.cards;
+
+        if(!cards){
+            return false;
+        }
+
+        return cards.some(function(card){
+            return card.name=="lebu";
+        });
+    },
+
+    content:function(){
+
+        var cards=trigger.cards2 || trigger.cards;
+
+        var num=cards.filter(function(card){
+            return card.name=="lebu";
+        }).length;
+
+        var gains=[];
+
+        for(var i=0;i<num;i++){
+
+            gains.push(
+                game.createCard2(
+                    "dm_shutiao",
+                    "none",
+                    0
+                )
+            );
+        }
+
+        if(gains.length){
+
+            player.gain(
+                gains,
+                "gain2"
+            );
+        }
+    },
+},
+
+// 每当有角色死亡
+dm_gaoshu_die:{
+    trigger:{
+        global:"dieAfter",
+    },
+
+    forced:true,
+    popup:false,
+
+    content:function(){
+
+        var card=game.createCard2(
+            "dm_shutiao",
+            "none",
+            0
+        );
+
+        player.gain(
+            card,
+            "gain2"
+        );
+    },
+},
+
+// “薯”标记
+dm_shu:{
+    charlotte:true,
+    mark:true,
+    marktext:"薯",
+
+    intro:{
+        content:"当前有#枚“薯”标记",
+    },
+},
+
+// ===== 食薯：未觉醒版，每阶段限一次 =====
+
+dm_shishu:{
+    enable:"phaseUse",
+    usable:1,
+
+    filter:function(event,player){
+        return player.countMark("dm_shu")>0;
+    },
+
+    content:function(){
+        "step 0"
+
+        player.chooseControl(
+            "恢复1点体力",
+            "摸三张牌",
+            "所有角色获得一张薯条"
+        ).set(
+            "prompt",
+            "食薯：移去1枚“薯”标记并选择一项"
+        ).set("ai",function(){
+
+            if(player.hp<player.maxHp){
+                return 0;
+            }
+
+            return 1;
+        });
+
+        "step 1"
+
+        player.removeMark(
+            "dm_shu",
+            1
+        );
+
+        if(result.index==0){
+
+            player.recover(1);
+
+            event.finish();
+            return;
+        }
+
+        if(result.index==1){
+
+            player.draw(3);
+
+            event.finish();
+            return;
+        }
+
+        if(result.index==2){
+
+            var list=game.filterPlayer();
+
+            for(var i=0;i<list.length;i++){
+
+                var card=game.createCard2(
+                    "dm_shutiao",
+                    "none",
+                    0
+                );
+
+                list[i].gain(
+                    card,
+                    "gain2"
+                );
+            }
+
+            event.finish();
+            return;
+        }
+    },
+
+    ai:{
+        order:7,
+        result:{
+            player:1,
+        },
+    },
+},
+
+// ===== 食薯：觉醒后无限版 =====
+
+dm_shishu_inf:{
+    enable:"phaseUse",
+
+    filter:function(event,player){
+        return player.countMark("dm_shu")>0;
+    },
+
+    content:function(){
+        "step 0"
+
+        player.chooseControl(
+            "恢复1点体力",
+            "摸三张牌",
+            "所有角色获得一张薯条"
+        ).set(
+            "prompt",
+            "食薯：移去1枚“薯”标记并选择一项"
+        ).set("ai",function(){
+
+            if(player.hp<player.maxHp){
+                return 0;
+            }
+
+            return 1;
+        });
+
+        "step 1"
+
+        player.removeMark(
+            "dm_shu",
+            1
+        );
+
+        if(result.index==0){
+
+            player.recover(1);
+
+            event.finish();
+            return;
+        }
+
+        if(result.index==1){
+
+            player.draw(3);
+
+            event.finish();
+            return;
+        }
+
+        if(result.index==2){
+
+            var list=game.filterPlayer();
+
+            for(var i=0;i<list.length;i++){
+
+                var card=game.createCard2(
+                    "dm_shutiao",
+                    "none",
+                    0
+                );
+
+                list[i].gain(
+                    card,
+                    "gain2"
+                );
+            }
+
+            event.finish();
+            return;
+        }
+    },
+
+    ai:{
+        order:7,
+        result:{
+            player:1,
+        },
+    },
+},
+
+// ===== 吃饱变异 =====
+
+dm_chibao:{
+    trigger:{
+        player:"phaseBegin",
+    },
+
+    juexingji:true,
+    forced:true,
+
+    skillAnimation:true,
+    animationColor:"wood",
+
+    filter:function(event,player){
+
+        return (
+            !player.storage.dm_chibao_awakened &&
+            player.countMark("dm_shu")>=6
+        );
+    },
+
+    content:function(){
+        "step 0"
+
+        player.storage.dm_chibao_awakened=true;
+
+        player.awakenSkill(
+            "dm_chibao"
+        );
+
+        player.gainMaxHp(3);
+
+        "step 1"
+
+        player.recover(3);
+
+        "step 2"
+
+        // 把“限一次食薯”替换成“无限食薯”
+        player.removeSkill(
+            "dm_shishu"
+        );
+
+        player.addSkill(
+            "dm_shishu_inf"
+        );
+    },
+},
 
 
 

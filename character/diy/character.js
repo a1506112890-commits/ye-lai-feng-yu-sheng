@@ -68,6 +68,16 @@ sf:{
         "sf_hongquan"
     ],
 },
+dongming:{
+    sex:"female",
+    group:"shu",
+    hp:3,
+    skills:[
+        "dm_gaoshu",
+        "dm_shishu",
+        "dm_chibao"
+    ],
+},
 
 };
 	
