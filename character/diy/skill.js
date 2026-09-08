@@ -2362,7 +2362,6 @@ xd_pogu:{
 
         "step 1"
 
-        // changeCharacter需要新的武将组合
         event.xd_newCharacter=[
             "xiaodu_sihengtuo"
         ];
@@ -2374,17 +2373,33 @@ xd_pogu:{
 
         "step 2"
 
-        // 变身完成后，以衍生角色设定为3体力上限
+        // 恢复所有被废除的装备栏
+        for(var i=1;i<=5;i++){
+
+            if(!player.hasEnabledSlot(i)){
+
+                player.enableEquip(
+                    "equip"+i
+                );
+
+            }
+        }
+
+
+        "step 3"
+
+        // 变身后固定为3点体力上限
         player.maxHp=3;
 
-        // 直接把体力拉回满值
+        // 直接回满
         player.hp=player.maxHp;
 
         player.update();
 
 
-        "step 3"
+        "step 4"
 
+        // 摸四张牌
         player.draw(4);
     },
 },
@@ -2407,149 +2422,123 @@ xd_juzhi:{
 
     intro:{
         content:function(storage,player){
-
             if(player.storage.xd_juzhi){
-                return "当前为阴：其他角色各受到1点伤害，然后你令一名其他角色回复1点体力。";
+                return "当前为阴：对所有其他角色各造成1点伤害，然后令一名其他角色回复1点体力。";
             }
 
-            return "当前为阳：所有角色各回复1点体力，然后你对一名角色造成1点伤害。";
+            return "当前为阳：所有角色各回复1点体力，然后对一名角色造成1点伤害。";
         },
     },
 
-    content:function(){
-        "step 0"
+    async content(event,trigger,player){
 
-        event.xd_yin=!!player.storage.xd_juzhi;
+        // 保存发动前的状态
+        // false = 阳
+        // true  = 阴
+        const yin=!!player.storage.xd_juzhi;
 
-        player.changeZhuanhuanji(
-            "xd_juzhi"
-        );
+        // 发动后切换阴阳
+        player.changeZhuanhuanji("xd_juzhi");
 
 
-        // =================================================
+        // =========================
         // 阳
-        // =================================================
+        // =========================
+        if(!yin){
 
-        if(!event.xd_yin){
+            const list=game.filterPlayer(function(current){
+                return current.isIn();
+            });
 
-            event.xd_list=game.filterPlayer();
-            event.xd_index=0;
+            // 所有角色各回复1点体力
+            for(const current of list){
 
-            event.goto(1);
+                if(
+                    current.isIn() &&
+                    current.hp<current.maxHp
+                ){
+                    await current.recover(1);
+                }
+            }
+
+            // 然后选择一名角色造成1点伤害
+            const result=await player
+                .chooseTarget(
+                    "拒止·阳：选择一名角色，对其造成1点伤害",
+                    true,
+                    function(card,player,target){
+                        return target.isIn();
+                    }
+                )
+                .forResult();
+
+            if(
+                result.bool &&
+                result.targets &&
+                result.targets.length
+            ){
+                await result.targets[0].damage(
+                    1,
+                    player
+                );
+            }
+
             return;
         }
 
 
-        // =================================================
+        // =========================
         // 阴
-        // =================================================
+        // =========================
 
-        event.xd_list=game.filterPlayer(function(current){
-            return current!=player;
+        const others=game.filterPlayer(function(current){
+            return (
+                current!=player &&
+                current.isIn()
+            );
         });
 
-        event.xd_index=0;
+        // 对所有其他角色各造成1点伤害
+        for(const current of others){
 
-        event.goto(10);
+            if(current.isIn()){
+                await current.damage(
+                    1,
+                    player
+                );
+            }
+        }
 
-
-        // =================================================
-        // 阳：所有角色依次回复1
-        // =================================================
-
-        "step 1"
-
-        if(event.xd_index>=event.xd_list.length){
-
-            player.chooseTarget(
-                "拒止·阳：选择一名角色，对其造成1点伤害",
-                true
+        // 伤害结算后，重新获取仍然存活的其他角色
+        if(!game.hasPlayer(function(current){
+            return (
+                current!=player &&
+                current.isIn()
             );
-
-            event.goto(3);
+        })){
             return;
         }
 
-        event.xd_current=
-            event.xd_list[event.xd_index];
-
-        event.xd_index++;
-
-        if(
-            event.xd_current &&
-            event.xd_current.isIn() &&
-            event.xd_current.hp<
-                event.xd_current.maxHp
-        ){
-            event.xd_current.recover(1);
-        }
-
-        event.goto(1);
-
-
-        "step 3"
-
-        if(
-            result.bool &&
-            result.targets &&
-            result.targets.length
-        ){
-            result.targets[0].damage(
-                1,
-                player
-            );
-        }
-
-        event.finish();
-        return;
-
-
-        // =================================================
-        // 阴：其他角色依次受到1点伤害
-        // =================================================
-
-        "step 10"
-
-        if(event.xd_index>=event.xd_list.length){
-
-            player.chooseTarget(
-                "拒止·阴：选择一名其他角色回复1点体力",
+        // 然后选择一名其他角色回复1点体力
+        const result=await player
+            .chooseTarget(
+                "拒止·阴：选择一名其他角色，其回复1点体力",
                 true,
                 function(card,player,target){
-                    return target!=player;
+                    return (
+                        target!=player &&
+                        target.isIn()
+                    );
                 }
-            );
-
-            event.goto(12);
-            return;
-        }
-
-        event.xd_current=
-            event.xd_list[event.xd_index];
-
-        event.xd_index++;
-
-        if(
-            event.xd_current &&
-            event.xd_current.isIn()
-        ){
-            event.xd_current.damage(
-                1,
-                player
-            );
-        }
-
-        event.goto(10);
-
-
-        "step 12"
+            )
+            .forResult();
 
         if(
             result.bool &&
             result.targets &&
             result.targets.length
         ){
-            result.targets[0].recover(1);
+            await result.targets[0].recover(1);
         }
     },
 
@@ -2576,8 +2565,21 @@ xd_prts:{
 
     filter:function(event,player){
 
-        // 必须是玩家真正处于托管/AI代打状态
-        if(!player.isUnderControl()){
+        // 必须是小度·思衡托
+        if(
+            player.name!="xiaodu_sihengtuo" &&
+            player.name1!="xiaodu_sihengtuo"
+        ){
+            return false;
+        }
+
+        // 必须是当前客户端自己的角色
+        if(player!=game.me){
+            return false;
+        }
+
+        // 必须已经点击“托管”
+        if(!_status.auto){
             return false;
         }
 
@@ -2585,6 +2587,7 @@ xd_prts:{
             return false;
         }
 
+        // 只在使用基本牌后触发
         return get.type(
             event.card,
             null,
@@ -2595,28 +2598,40 @@ xd_prts:{
     content:function(){
         "step 0"
 
-        event.xd_card=get.cardPile(function(card){
+        // 从牌堆里随机寻找一张非基本牌
+        var list=[];
 
-            if(!card){
-                return false;
+        var pile=ui.cardPile.childNodes;
+
+        for(var i=0;i<pile.length;i++){
+
+            var card=pile[i];
+
+            if(
+                card &&
+                get.type(
+                    card,
+                    null,
+                    false
+                )!="basic"
+            ){
+                list.push(card);
             }
+        }
 
-            return get.type(
-                card,
-                null,
-                false
-            )!="basic";
-        });
-
-        if(!event.xd_card){
+        if(!list.length){
             event.finish();
             return;
         }
 
+        event.xd_prts_card=
+            list.randomGet();
+
+
         "step 1"
 
         player.gain(
-            event.xd_card,
+            event.xd_prts_card,
             "gain2"
         );
     },
