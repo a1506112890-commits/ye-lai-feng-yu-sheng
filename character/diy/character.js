@@ -79,6 +79,35 @@ dongming:{
     ],
 },
 
+xiaodu:{
+    sex:"female",
+    group:"wu",
+    hp:3,
+
+    skills:[
+        "xd_dudie",
+        "xd_pogu"
+    ],
+
+    intro:"dude",
+},
+
+
+xiaodu_sihengtuo:{
+    hidden:true,
+    charlotte:true,
+
+    sex:"female",
+    group:"wu",
+    hp:3,
+
+    skills:[
+        "xd_juzhi",
+        "xd_prts"
+    ],
+
+    intro:"托管状态下的小度。",
+},
 };
 	
 
