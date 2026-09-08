@@ -2077,7 +2077,7 @@ xd_dudie:{
     intro:{
         content:function(storage,player){
             if(player.storage.xd_dudie){
-                return "当前为阴：弃置一张手牌并失去1点体力，令一名角色增加1点体力上限并回复1点体力。";
+                return "当前为阴：弃置一张手牌并失去1点体力，然后令一名角色增加1点体力上限并回复1点体力。";
             }
             return "当前为阳：废除一个装备栏，视为使用一张普通锦囊牌。";
         },
@@ -2085,39 +2085,44 @@ xd_dudie:{
 
     filter:function(event,player){
 
-        // 阳
-        if(!player.storage.xd_dudie){
-
-            // 至少还存在一个没有被废除的装备栏
-            for(var i=1;i<=5;i++){
-                if(player.hasEnabledSlot(i)){
-                    return true;
-                }
-            }
-
-            return false;
+        // 阴
+        if(player.storage.xd_dudie){
+            return player.countCards("h")>0;
         }
 
-        // 阴：必须有手牌，且失去1体力之后不能直接无法发动
-        return player.countCards("h")>0;
+        // 阳：必须至少还有一个可废除的装备栏
+        for(var i=1;i<=5;i++){
+            if(player.hasEnabledSlot(i)){
+                return true;
+            }
+        }
+
+        return false;
     },
 
     content:function(){
         "step 0"
 
-        // 保存本次发动时是阳还是阴
+        // 记录本次发动时的阴阳状态
         event.xd_yin=!!player.storage.xd_dudie;
 
-        // 发动后转换阴阳
+        // 发动后切换状态
         player.changeZhuanhuanji("xd_dudie");
 
+        if(event.xd_yin){
 
-        // =================================================
-        // 阳
-        // =================================================
+            // ===== 阴 =====
+            player.chooseToDiscard(
+                "h",
+                1,
+                true,
+                "度叠·阴：弃置一张手牌"
+            );
 
-        if(!event.xd_yin){
+        }
+        else{
 
+            // ===== 阳 =====
             var list=[];
 
             if(player.hasEnabledSlot(1)){
@@ -2144,31 +2149,45 @@ xd_dudie:{
                 "prompt",
                 "度叠·阳：选择一个装备栏废除"
             );
+        }
 
-            event.goto(1);
+
+        "step 1"
+
+        // =================================================
+        // 阴：弃牌完成
+        // =================================================
+
+        if(event.xd_yin){
+
+            if(
+                !result.bool ||
+                !result.cards ||
+                !result.cards.length
+            ){
+                event.finish();
+                return;
+            }
+
+            event.xd_discarded=result.cards[0];
+
+            // 判断是不是串或薯条
+            event.xd_special=(
+                event.xd_discarded.name=="lv_chuan_card" ||
+                event.xd_discarded.name=="dm_shutiao"
+            );
+
+            // 下一步失去体力
+            player.loseHp(1);
+
+            event.goto(5);
             return;
         }
 
 
         // =================================================
-        // 阴
-        // =================================================
-
-        player.chooseCard(
-            "h",
-            1,
-            true,
-            "度叠·阴：弃置一张手牌"
-        );
-
-        event.goto(10);
-
-
-        // =================================================
         // 阳：废除装备栏
         // =================================================
-
-        "step 1"
 
         var map={
             "武器栏":"equip1",
@@ -2180,16 +2199,21 @@ xd_dudie:{
 
         event.xd_slot=map[result.control];
 
+        if(!event.xd_slot){
+            event.finish();
+            return;
+        }
+
         player.disableEquip(
             event.xd_slot
         );
 
 
-        // =================================================
-        // 阳：选择任意普通锦囊
-        // =================================================
-
         "step 2"
+
+        // =================================================
+        // 阳：选择锦囊牌
+        // =================================================
 
         var tricks=[];
 
@@ -2201,6 +2225,7 @@ xd_dudie:{
                 continue;
             }
 
+            // 只取普通锦囊
             if(lib.card[name].type=="trick"){
                 tricks.push(name);
             }
@@ -2219,17 +2244,20 @@ xd_dudie:{
             true
         );
 
+
         "step 3"
 
-        if(!result.bool){
+        if(
+            !result.bool ||
+            !result.links ||
+            !result.links.length
+        ){
             event.finish();
             return;
         }
 
         event.xd_trick=result.links[0][2];
 
-
-        // 让系统走正常“使用牌”流程
         player.chooseUseTarget(
             {
                 name:event.xd_trick,
@@ -2244,42 +2272,10 @@ xd_dudie:{
 
 
         // =================================================
-        // 阴：记录并弃牌
+        // 阴：失去体力后选择目标
         // =================================================
 
-        "step 10"
-
-        if(!result.bool){
-            event.finish();
-            return;
-        }
-
-        event.xd_card=result.cards[0];
-
-        event.xd_special=(
-            event.xd_card.name=="lv_chuan_card" ||
-            event.xd_card.name=="dm_shutiao"
-        );
-
-        player.discard(
-            event.xd_card
-        );
-
-
-        // =================================================
-        // 阴：失去1点体力
-        // =================================================
-
-        "step 11"
-
-        player.loseHp(1);
-
-
-        // =================================================
-        // 阴：选择受益角色
-        // =================================================
-
-        "step 12"
+        "step 5"
 
         player.chooseTarget(
             "度叠·阴：选择一名角色，其增加1点体力上限并回复1点体力",
@@ -2287,7 +2283,7 @@ xd_dudie:{
         );
 
 
-        "step 13"
+        "step 6"
 
         if(
             !result.bool ||
@@ -2303,34 +2299,25 @@ xd_dudie:{
         event.xd_target.gainMaxHp(1);
 
 
-        "step 14"
+        "step 7"
 
         event.xd_target.recover(1);
 
 
-        // =================================================
-        // 阴：弃的是串或薯条，恢复全部废除装备栏
-        // =================================================
+        "step 8"
 
-        "step 15"
-
+        // 如果弃置的是【串】或者【薯条】
+        // 恢复所有已废除的装备栏
         if(event.xd_special){
-
-            var disabled=[];
 
             for(var i=1;i<=5;i++){
 
                 if(!player.hasEnabledSlot(i)){
-                    disabled.push("equip"+i);
-                }
-            }
 
-            if(disabled.length){
-
-                for(var j=0;j<disabled.length;j++){
                     player.enableEquip(
-                        disabled[j]
+                        "equip"+i
                     );
+
                 }
             }
         }
@@ -2343,7 +2330,6 @@ xd_dudie:{
         },
     },
 },
-
 
 // -------------------------------------------------
 // 破梏重生
@@ -2374,35 +2360,30 @@ xd_pogu:{
         );
 
 
-        // 变身为衍生武将
         "step 1"
 
-        player.changeCharacter(
+        // changeCharacter需要新的武将组合
+        event.xd_newCharacter=[
             "xiaodu_sihengtuo"
+        ];
+
+        player.changeCharacter(
+            event.xd_newCharacter
         );
 
 
-        // 确保体力上限回到思衡托定义的3
         "step 2"
 
-        if(player.maxHp!=3){
-            player.maxHp=3;
-            player.update();
-        }
+        // 变身完成后，以衍生角色设定为3体力上限
+        player.maxHp=3;
+
+        // 直接把体力拉回满值
+        player.hp=player.maxHp;
+
+        player.update();
 
 
-        // 回满
         "step 3"
-
-        if(player.hp<player.maxHp){
-            player.recover(
-                player.maxHp-player.hp
-            );
-        }
-
-
-        // 摸四张
-        "step 4"
 
         player.draw(4);
     },
