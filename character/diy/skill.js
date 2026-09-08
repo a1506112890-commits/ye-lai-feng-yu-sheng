@@ -901,7 +901,7 @@ ys_shiyao_damage:{
         if(source){
 
             player.damage(
-                1,
+                2,
                 "fire",
                 source
             );
@@ -910,7 +910,7 @@ ys_shiyao_damage:{
         else{
 
             player.damage(
-                1,
+                2,
                 "fire"
             );
 
@@ -978,24 +978,31 @@ ys_maomao:{
     forced:true,
 
     init:function(player){
-        player.storage.ys_maomao_count=0;
+        player.storage.ys_maomao_damage=false;
+        player.storage.ys_maomao_lethal=false;
     },
 
     filter:function(event,player){
 
+        // 自己回合开始：重置两项
         if(event.name=="phase"){
             return true;
         }
 
         if(event.name=="damage"){
 
-            if(
-                typeof player.storage.ys_maomao_count!="number"
-            ){
-                player.storage.ys_maomao_count=0;
+            // 第一次普通受伤尚未触发
+            if(!player.storage.ys_maomao_damage){
+                return true;
             }
 
-            return player.storage.ys_maomao_count<2;
+            // 第一次致命伤害尚未触发
+            if(
+                !player.storage.ys_maomao_lethal &&
+                player.hp<=0
+            ){
+                return true;
+            }
         }
 
         return false;
@@ -1003,25 +1010,46 @@ ys_maomao:{
 
     content:function(){
 
+        // ===== 回合开始：重置 =====
         if(trigger.name=="phase"){
 
-            player.storage.ys_maomao_count=0;
+            player.storage.ys_maomao_damage=false;
+            player.storage.ys_maomao_lethal=false;
 
+            return;
         }
-        else{
 
-            if(
-                typeof player.storage.ys_maomao_count!="number"
-            ){
-                player.storage.ys_maomao_count=0;
-            }
 
-            if(player.storage.ys_maomao_count<2){
+        // ===== 受到伤害 =====
 
-                player.storage.ys_maomao_count++;
+        var recoverNum=0;
 
-                player.recover(1);
-            }
+
+        // 本轮第一次受到伤害
+        if(!player.storage.ys_maomao_damage){
+
+            player.storage.ys_maomao_damage=true;
+
+            recoverNum++;
+        }
+
+
+        // 本轮第一次受到致命伤害
+        if(
+            player.hp<=0 &&
+            !player.storage.ys_maomao_lethal
+        ){
+
+            player.storage.ys_maomao_lethal=true;
+
+            recoverNum++;
+        }
+
+
+        if(recoverNum>0){
+
+            player.recover(recoverNum);
+
         }
     },
 },
@@ -1329,17 +1357,31 @@ sf_zhengdan_button:{
         }
 
         // ===== 2点 =====
-        if(num==2){
+        // ===== 2点 =====
+     // ===== 2点 =====
+if(num==2){
 
-            event.zd_list=game.filterPlayer();
-            event.zd_index=0;
+    var enemies=event.sf.getEnemies().filter(function(current){
+        return current.isIn();
+    });
 
-            game.countPlayer(function(current){
-                current.say("什么鬼");
-            });
+    if(!enemies.length){
+        event.finish();
+        return;
+    }
 
-            event.goto(3);
-            return;
+    event.zd_enemy=enemies.randomGet();
+
+    // 随机一名SF的敌人受到1点无来源伤害
+    event.zd_enemy.damage(
+        1,
+        "normal",
+        "nosource"
+    );
+
+    event.goto(3);
+    return;
+}
         }
 
         // ===== 3点 =====
@@ -1367,40 +1409,45 @@ sf_zhengdan_button:{
         }
 
         // ===== 5点 =====
+        // ===== 5点 =====
         if(num==5){
 
-            event.sf.say(
-                "不是我害了你，是这个乱世害了你啊"
-            );
+    var allPlayers=game.filterPlayer(function(current){
+        return current.isIn();
+    });
 
-            event.zd_all=game.filterPlayer();
+    if(!allPlayers.length){
+        event.finish();
+        return;
+    }
 
-            // 火伤目标
-            event.zd_fire=
-                event.zd_all.randomGet();
+    // 四次独立随机，可以随机到同一个人
+    var fireTarget=allPlayers.randomGet();
+    var recoverTarget=allPlayers.randomGet();
+    var turnTarget=allPlayers.randomGet();
+    var drawTarget=allPlayers.randomGet();
 
-            // 回血目标
-            event.zd_recover=
-                event.zd_all.randomGet();
+    event.sf.say(
+        "不是我害了你，是这个乱世害了你啊"
+    );
 
-            // 翻面目标
-            event.zd_turn=
-                event.zd_all.randomGet();
+    // 随机一人受到1点无来源火焰伤害
+    if(fireTarget && fireTarget.isIn()){
+        fireTarget.damage(
+            1,
+            "fire",
+            "nosource"
+        );
+    }
 
-            // 摸牌目标
-            event.zd_draw=
-                event.zd_all.randomGet();
+    // 保存剩余三个目标，伤害结算完继续
+    event.zd_recoverTarget=recoverTarget;
+    event.zd_turnTarget=turnTarget;
+    event.zd_drawTarget=drawTarget;
 
-            event.zd_fire.damage(
-                1,
-                "fire",
-                "nosource"
-            );
-
-            event.goto(5);
-            return;
-        }
-
+    event.goto(5);
+    return;
+}
         // ===== 6点 =====
         if(num==6){
 
@@ -1420,61 +1467,54 @@ sf_zhengdan_button:{
         // 2点：所有角色依次随机弃一张牌
         // =================================================
 
-        "step 3"
-
-        if(event.zd_index>=event.zd_list.length){
-            event.finish();
-            return;
-        }
-
-        event.zd_current=
-            event.zd_list[event.zd_index];
-
-        if(event.zd_current.countCards("he")>0){
-
-            var card=
-                event.zd_current.getCards("he").randomGet();
-
-            event.zd_current.discard(card);
-        }
-
-        event.zd_index++;
-
-        event.goto(3);
-
+        
 
         // =================================================
         // 5点：剩下三个随机效果
         // =================================================
+      "step 3"
 
-        "step 5"
+if(
+    event.zd_enemy &&
+    event.zd_enemy.isIn()
+){
 
-        if(
-            event.zd_recover &&
-            event.zd_recover.isIn()
-        ){
-            event.zd_recover.recover(1);
-        }
+    var hs=event.zd_enemy.getCards("h");
 
-        "step 6"
+    if(hs.length){
+        event.zd_enemy.discard(hs);
+    }
+}
 
-        if(
-            event.zd_turn &&
-            event.zd_turn.isIn()
-        ){
-            event.zd_turn.turnOver();
-        }
+event.finish();
+      "step 5"
 
-        "step 7"
+if(
+    event.zd_recoverTarget &&
+    event.zd_recoverTarget.isIn()
+){
+    event.zd_recoverTarget.recover(1);
+}
 
-        if(
-            event.zd_draw &&
-            event.zd_draw.isIn()
-        ){
-            event.zd_draw.draw(2);
-        }
+"step 6"
 
-        event.finish();
+if(
+    event.zd_turnTarget &&
+    event.zd_turnTarget.isIn()
+){
+    event.zd_turnTarget.turnOver();
+}
+
+"step 7"
+
+if(
+    event.zd_drawTarget &&
+    event.zd_drawTarget.isIn()
+){
+    event.zd_drawTarget.draw(2);
+}
+
+event.finish();
 
 
         // =================================================
