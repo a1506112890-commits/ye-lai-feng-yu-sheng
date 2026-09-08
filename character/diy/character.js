@@ -108,6 +108,22 @@ xiaodu_sihengtuo:{
 
     intro:"托管状态下的小度。",
 },
+iliya:{
+    sex:"female",
+    group:"shen",
+    hp:3,
+
+    // 开局实际上只有红宝石、幻灵。
+    // ilya_secret 是不显示的彩蛋控制技能
+    skills:[
+        "ilya_ruby",
+        "ilya_phantom",
+        "ilya_secret"
+    ],
+
+    intro:"冯爱因兹贝伦。",
+},
+
 };
 	
 

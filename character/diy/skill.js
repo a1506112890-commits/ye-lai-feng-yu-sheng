@@ -2648,6 +2648,997 @@ xd_prts:{
 },
 
 
+// =================================================
+// 伊莉雅隐藏彩蛋
+// 头像右上角有一个很淡的小红宝石
+// 连续累计点击5次解锁：卡片英灵、变身、奇药
+// =================================================
+
+ilya_secret:{
+    charlotte:true,
+    silent:true,
+    popup:false,
+
+    init:function(player){
+
+        if(typeof player.storage.ilya_secret_click!="number"){
+            player.storage.ilya_secret_click=0;
+        }
+
+        if(player.storage.ilya_secret_unlocked){
+            return;
+        }
+
+        // 只给操纵伊莉雅的本地玩家创建按钮
+        if(player!=game.me){
+            return;
+        }
+
+        // 防止重复创建
+        if(player.storage.ilya_secret_node){
+            return;
+        }
+
+        if(!player.node || !player.node.avatar){
+            return;
+        }
+
+        var ruby=ui.create.div(
+            ".ilya-secret-ruby",
+            player.node.avatar
+        );
+
+        // 一个很不起眼的小红宝石
+        ruby.innerHTML="♦";
+
+        ruby.style.position="absolute";
+        ruby.style.right="3px";
+        ruby.style.top="4px";
+
+        ruby.style.width="15px";
+        ruby.style.height="15px";
+
+        ruby.style.lineHeight="15px";
+        ruby.style.textAlign="center";
+
+        ruby.style.fontSize="11px";
+        ruby.style.fontWeight="bold";
+
+        ruby.style.opacity="0.16";
+
+        ruby.style.cursor="pointer";
+        ruby.style.zIndex="20";
+
+        ruby.style.userSelect="none";
+
+        player.storage.ilya_secret_node=ruby;
+
+
+        ruby.addEventListener(
+            lib.config.touchscreen ? "touchend" : "click",
+            function(e){
+
+                e.stopPropagation();
+
+                if(
+                    !player.isIn() ||
+                    player.storage.ilya_secret_unlocked
+                ){
+                    return;
+                }
+
+                player.storage.ilya_secret_click++;
+
+                // 前4次完全不给提示
+                if(player.storage.ilya_secret_click<5){
+                    return;
+                }
+
+
+                player.storage.ilya_secret_unlocked=true;
+
+                // 创建正式游戏事件进行解锁
+                var next=game.createEvent(
+                    "ilya_secret_unlock"
+                );
+
+                next.player=player;
+
+                next.setContent(function(){
+
+                    "step 0"
+
+                    player.addSkill(
+                        "ilya_heroiccard"
+                    );
+
+                    player.addSkill(
+                        "ilya_transform"
+                    );
+
+                    player.addSkill(
+                        "ilya_potion"
+                    );
+
+
+                    "step 1"
+
+                    player.$fullscreenpop(
+                        "隐藏魔术回路解放",
+                        "fire"
+                    );
+
+                    player.say(
+                        "你居然发现了这个？"
+                    );
+
+                    game.log(
+                        player,
+                        "解放了隐藏的魔术回路"
+                    );
+
+
+                    "step 2"
+
+                    // 解锁后移除红宝石
+                    if(
+                        player.storage.ilya_secret_node
+                    ){
+                        player.storage.ilya_secret_node.remove();
+
+                        delete player.storage.ilya_secret_node;
+                    }
+                });
+            }
+        );
+    },
+
+    onremove:function(player){
+
+        if(player.storage.ilya_secret_node){
+
+            player.storage.ilya_secret_node.remove();
+
+            delete player.storage.ilya_secret_node;
+        }
+    },
+},
+ilya_ruby:{
+    trigger:{
+        target:"useCardToTargeted",
+    },
+
+    usable:7,
+    direct:true,
+
+    filter:function(event,player){
+
+        return (
+            event.player &&
+            event.player!=player &&
+            event.player.isIn()
+        );
+    },
+
+    content:function(){
+        "step 0"
+
+        event.ruby_target=trigger.player;
+
+        var choiceList=[
+            "摸一张牌",
+            "将"+get.translation(event.ruby_target)+"区域内的一张牌置于牌堆顶"
+        ];
+
+        var choices=[
+            "选项一"
+        ];
+
+        if(event.ruby_target.countCards("hej")>0){
+            choices.push("选项二");
+        }
+        else{
+            choiceList[1]=
+                '<span style="opacity:0.5">'+
+                choiceList[1]+
+                "</span>";
+        }
+
+        choices.push("cancel2");
+
+        player.chooseControl(
+            choices
+        ).set(
+            "choiceList",
+            choiceList
+        );
+
+
+        "step 1"
+
+        if(result.control=="cancel2"){
+
+            event.finish();
+            return;
+        }
+
+        player.logSkill(
+            "ilya_ruby",
+            event.ruby_target
+        );
+
+        if(result.index==1){
+
+            player.choosePlayerCard(
+                event.ruby_target,
+                "hej",
+                true
+            );
+
+        }
+        else{
+
+            player.draw();
+
+            event.goto(3);
+        }
+
+
+        "step 2"
+
+        if(
+            result.bool &&
+            result.cards &&
+            result.cards.length
+        ){
+
+            var card=result.cards[0];
+
+            event.ruby_target.lose(
+                card,
+                ui.cardPile,
+                "insert"
+            );
+        }
+
+
+        "step 3"
+
+        if(
+            event.ruby_target.isIn() &&
+            player.countCards("h")==
+            event.ruby_target.countCards("h")
+        ){
+
+            player.chooseBool(
+                "红宝石：是否令"+
+                get.translation(trigger.card)+
+                "对你无效？"
+            ).set("ai",function(){
+
+                return get.effect(
+                    player,
+                    trigger.card,
+                    trigger.player,
+                    player
+                )<0;
+            });
+
+        }
+        else{
+
+            event._result={
+                bool:false
+            };
+        }
+
+
+        "step 4"
+
+        if(result.bool){
+
+            if(trigger.excluded){
+                trigger.excluded.add(player);
+            }
+        }
+
+
+        // 原版伊莉雅红宝石最后的隐藏攻击效果
+        if(
+            event.ruby_target &&
+            event.ruby_target.isIn()
+        ){
+            event.ruby_target.damage(
+                1,
+                player
+            );
+        }
+    },
+},
+ilya_phantom:{
+    trigger:{
+        player:"phaseEnd",
+    },
+
+    direct:true,
+
+    init:function(player){
+
+        if(!Array.isArray(
+            player.storage.ilya_phantom
+        )){
+            player.storage.ilya_phantom=[];
+        }
+    },
+
+    mark:true,
+    marktext:"幻",
+
+    intro:{
+        content:function(storage,player){
+
+            var list=
+                player.storage.ilya_phantom || [];
+
+            if(!list.length){
+                return "尚未记录锦囊牌";
+            }
+
+            return "已记录："+
+                list.map(function(name){
+                    return get.translation(name);
+                }).join("、");
+        },
+    },
+
+    filter:function(event,player){
+
+        return (
+            player.storage.ilya_phantom &&
+            player.storage.ilya_phantom.length>0 &&
+            player.countCards("he")>0
+        );
+    },
+
+    content:function(){
+        "step 0"
+
+        var max=Math.min(
+            Math.max(
+                1,
+                player.countCards("e")
+            ),
+            player.storage.ilya_phantom.length
+        );
+
+        player.chooseToDiscard(
+            "he",
+            [1,max],
+            "幻灵：弃置至多"+
+            get.cnNumber(max)+
+            "张牌"
+        ).set("ai",function(card){
+            return 7-get.value(card);
+        });
+
+
+        "step 1"
+
+        if(!result.bool){
+
+            event.finish();
+            return;
+        }
+
+        event.phantom_num=
+            result.cards.length;
+
+        player.draw(
+            event.phantom_num
+        );
+
+
+        "step 2"
+
+        player.recover(
+            event.phantom_num
+        );
+
+        event.phantom_left=
+            event.phantom_num;
+
+
+        "step 3"
+
+        if(
+            event.phantom_left<=0 ||
+            !player.storage.ilya_phantom.length
+        ){
+
+            event.finish();
+            return;
+        }
+
+        var names=
+            player.storage.ilya_phantom.slice(0);
+
+        names.randomSort();
+
+        event.phantom_name=null;
+        event.phantom_target=null;
+
+
+        // 找一张目前存在可用目标的记录锦囊
+        for(var i=0;i<names.length;i++){
+
+            var name=names[i];
+
+            var targets=game.filterPlayer(
+                function(current){
+
+                    return player.canUse(
+                        {
+                            name:name,
+                            isCard:true
+                        },
+                        current,
+                        false
+                    );
+                }
+            );
+
+            if(targets.length){
+
+                event.phantom_name=name;
+
+                // 优先找对自己收益最高的目标
+                targets.sort(function(a,b){
+
+                    return (
+                        get.effect(
+                            b,
+                            {name:name},
+                            player,
+                            player
+                        )
+                        -
+                        get.effect(
+                            a,
+                            {name:name},
+                            player,
+                            player
+                        )
+                    );
+                });
+
+                event.phantom_target=
+                    targets[0];
+
+                break;
+            }
+        }
+
+
+        if(
+            !event.phantom_name ||
+            !event.phantom_target
+        ){
+
+            event.finish();
+            return;
+        }
+
+
+        // 从记录中消耗一次
+        player.storage.ilya_phantom.remove(
+            event.phantom_name
+        );
+
+        player.syncStorage(
+            "ilya_phantom"
+        );
+
+        if(
+            !player.storage.ilya_phantom.length
+        ){
+            player.unmarkSkill(
+                "ilya_phantom"
+            );
+        }
+        else{
+            player.updateMarks();
+        }
+
+
+        player.useCard(
+            {
+                name:event.phantom_name,
+                isCard:true
+            },
+            event.phantom_target,
+            false
+        );
+
+
+        "step 4"
+
+        event.phantom_left--;
+
+        event.goto(3);
+    },
+
+    group:"ilya_phantom_count",
+},
+ilya_phantom_count:{
+    trigger:{
+        global:"useCard",
+    },
+
+    forced:true,
+    silent:true,
+    popup:false,
+
+    filter:function(event,player){
+
+        if(
+            !event.card ||
+            !event.player ||
+            event.player==player
+        ){
+            return false;
+        }
+
+        // 保留旧版“敌人”的要求
+        if(
+            event.player.isEnemiesOf &&
+            !event.player.isEnemiesOf(player)
+        ){
+            return false;
+        }
+
+        var info=
+            lib.card[event.card.name];
+
+        if(!info){
+            return false;
+        }
+
+        // 只记录普通锦囊
+        if(info.type!="trick"){
+            return false;
+        }
+
+        // 只记录单目标锦囊
+        if(
+            !event.targets ||
+            event.targets.length!=1
+        ){
+            return false;
+        }
+
+        if(info.multitarget){
+            return false;
+        }
+
+        if(info.singleCard){
+            return false;
+        }
+
+        if(!info.enable){
+            return false;
+        }
+
+        return true;
+    },
+
+    content:function(){
+
+        if(!Array.isArray(
+            player.storage.ilya_phantom
+        )){
+            player.storage.ilya_phantom=[];
+        }
+
+        player.storage.ilya_phantom.push(
+            trigger.card.name
+        );
+
+        player.syncStorage(
+            "ilya_phantom"
+        );
+
+        player.markSkill(
+            "ilya_phantom"
+        );
+
+        player.updateMarks();
+    },
+},
+ilya_potion:{
+    trigger:{
+        player:"useCardToPlayered",
+    },
+
+    direct:true,
+
+    filter:function(event,player){
+
+        if(!event.card){
+            return false;
+        }
+
+        if(
+            ![
+                "sha",
+                "guohe",
+                "juedou",
+                "shunshou"
+            ].includes(event.card.name)
+        ){
+            return false;
+        }
+
+        return (
+            event.target &&
+            player.countCards("he")>0
+        );
+    },
+
+    content:function(){
+        "step 0"
+
+        event.potion_target=
+            trigger.target;
+
+        player.chooseToDiscard(
+            "he",
+            1,
+            "奇药：是否弃置一张牌发动随机效果？"
+        ).set("ai",function(card){
+
+            var target=
+                _status.event.getParent()
+                .potion_target;
+
+            if(
+                target &&
+                get.attitude(player,target)<0
+            ){
+                return 7-get.value(card);
+            }
+
+            return 0;
+        });
+
+
+        "step 1"
+
+        if(!result.bool){
+
+            event.finish();
+            return;
+        }
+
+        var num=
+            Math.floor(
+                Math.random()*5
+            );
+
+
+        // 1：目标随机弃2
+        if(num==0){
+
+            event.potion_target.randomDiscard(
+                2
+            );
+
+            event.finish();
+            return;
+        }
+
+
+        // 2：目标火伤
+        if(num==1){
+
+            event.potion_target.damage(
+                1,
+                "fire",
+                player
+            );
+
+            event.finish();
+            return;
+        }
+
+
+        // 3：自己回2
+        if(num==2){
+
+            player.recover(2);
+
+            event.finish();
+            return;
+        }
+
+
+        // 4：目标翻面，自己摸1
+        if(num==3){
+
+            event.potion_target.turnOver();
+
+            player.draw();
+
+            event.finish();
+            return;
+        }
+
+
+        // 5：获得潜行
+        if(num==4){
+
+            player.addTempSkill(
+                "qianxing",
+                {
+                    player:"phaseBegin"
+                }
+            );
+
+            event.finish();
+        }
+    },
+},
+ilya_heroiccard:{
+    trigger:{
+        player:"phaseBegin",
+    },
+
+    forced:true,
+
+    mark:true,
+    marktext:"卡",
+
+    init:function(player){
+
+        if(
+            typeof player.storage.ilya_heroiccards
+            !="number"
+        ){
+            player.storage.ilya_heroiccards=0;
+        }
+    },
+
+    intro:{
+        content:function(storage,player){
+
+            var num=
+                player.storage.ilya_heroiccards || 0;
+
+            return "当前拥有"+
+                num+
+                "张“英灵卡片”。";
+        },
+
+        markcount:function(storage,player){
+
+            return (
+                player.storage.ilya_heroiccards || 0
+            );
+        },
+    },
+
+    content:function(){
+
+        player.storage.ilya_heroiccards++;
+
+        player.syncStorage(
+            "ilya_heroiccards"
+        );
+
+        player.markSkill(
+            "ilya_heroiccard"
+        );
+
+        player.updateMarks();
+    },
+},
+ilya_transform:{
+    enable:"phaseUse",
+
+    filter:function(event,player){
+
+        return (
+            player.storage.ilya_heroiccards>0
+        );
+    },
+
+    content:function(){
+        "step 0"
+
+        // 消耗一张英灵卡片
+        player.storage.ilya_heroiccards--;
+
+        player.syncStorage(
+            "ilya_heroiccards"
+        );
+
+        player.updateMarks();
+
+
+        "step 1"
+
+        var characterList=[];
+
+        // 使用当前可以获取到的武将池
+        for(var name in lib.character){
+
+            if(
+                lib.filter.characterDisabled2(name) ||
+                lib.filter.characterDisabled(name)
+            ){
+                continue;
+            }
+
+            characterList.push(name);
+        }
+
+
+        var limitedSkills=[];
+
+
+        function getCharacterSkills(character){
+
+            var info=
+                lib.character[character];
+
+            if(!info){
+                return [];
+            }
+
+            // 兼容旧数组结构
+            if(Array.isArray(info)){
+                return info[3] || [];
+            }
+
+            // 兼容你现在的对象结构
+            return info.skills || [];
+        }
+
+
+        for(
+            var i=0;
+            i<characterList.length;
+            i++
+        ){
+
+            var skills=
+                getCharacterSkills(
+                    characterList[i]
+                );
+
+
+            for(
+                var j=0;
+                j<skills.length;
+                j++
+            ){
+
+                var skill=
+                    skills[j];
+
+                if(player.hasSkill(skill)){
+                    continue;
+                }
+
+                if(
+                    player.awakenedSkills &&
+                    player.awakenedSkills.includes(skill)
+                ){
+                    continue;
+                }
+
+
+                var expanded=[
+                    skill
+                ];
+
+                game.expandSkills(
+                    expanded
+                );
+
+
+                var limited=false;
+
+                for(
+                    var k=0;
+                    k<expanded.length;
+                    k++
+                ){
+
+                    var sinfo=
+                        lib.skill[
+                            expanded[k]
+                        ];
+
+                    if(
+                        sinfo &&
+                        sinfo.limited
+                    ){
+
+                        limited=true;
+                        break;
+                    }
+                }
+
+
+                if(
+                    limited &&
+                    !limitedSkills.includes(skill)
+                ){
+
+                    limitedSkills.push(
+                        skill
+                    );
+                }
+            }
+        }
+
+
+        if(!limitedSkills.length){
+
+            // 没搜到限定技，把卡还回来
+            player.storage.ilya_heroiccards++;
+
+            player.syncStorage(
+                "ilya_heroiccards"
+            );
+
+            player.updateMarks();
+
+            game.log(
+                player,
+                "没有找到可获得的限定技"
+            );
+
+            event.finish();
+            return;
+        }
+
+
+        event.transform_skill=
+            limitedSkills.randomGet();
+
+
+        "step 2"
+
+        player.addSkill(
+            event.transform_skill
+        );
+
+        player.popup(
+            event.transform_skill
+        );
+
+        game.log(
+            player,
+            "消耗了1张",
+            "#y英灵卡片",
+            "并获得技能",
+            "#g【"+
+            get.translation(
+                event.transform_skill
+            )+
+            "】"
+        );
+    },
+
+    ai:{
+        order:15,
+
+        result:{
+            player:10,
+        },
+    },
+},
 
 
 
