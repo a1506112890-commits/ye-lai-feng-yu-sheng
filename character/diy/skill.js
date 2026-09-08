@@ -2090,7 +2090,7 @@ xd_dudie:{
             return player.countCards("h")>0;
         }
 
-        // 阳：必须至少还有一个可废除的装备栏
+        // 阳
         for(var i=1;i<=5;i++){
             if(player.hasEnabledSlot(i)){
                 return true;
@@ -2103,10 +2103,10 @@ xd_dudie:{
     content:function(){
         "step 0"
 
-        // 记录本次发动时的阴阳状态
+        // 记录发动前状态：false=阳，true=阴
         event.xd_yin=!!player.storage.xd_dudie;
 
-        // 发动后切换状态
+        // 发动后切换阴阳
         player.changeZhuanhuanji("xd_dudie");
 
         if(event.xd_yin){
@@ -2125,25 +2125,11 @@ xd_dudie:{
             // ===== 阳 =====
             var list=[];
 
-            if(player.hasEnabledSlot(1)){
-                list.push("武器栏");
-            }
-
-            if(player.hasEnabledSlot(2)){
-                list.push("防具栏");
-            }
-
-            if(player.hasEnabledSlot(3)){
-                list.push("防御马栏");
-            }
-
-            if(player.hasEnabledSlot(4)){
-                list.push("进攻马栏");
-            }
-
-            if(player.hasEnabledSlot(5)){
-                list.push("宝物栏");
-            }
+            if(player.hasEnabledSlot(1)) list.push("武器栏");
+            if(player.hasEnabledSlot(2)) list.push("防具栏");
+            if(player.hasEnabledSlot(3)) list.push("防御马栏");
+            if(player.hasEnabledSlot(4)) list.push("进攻马栏");
+            if(player.hasEnabledSlot(5)) list.push("宝物栏");
 
             player.chooseControl(list).set(
                 "prompt",
@@ -2155,9 +2141,8 @@ xd_dudie:{
         "step 1"
 
         // =================================================
-        // 阴：弃牌完成
+        // 阴：弃牌后继续
         // =================================================
-
         if(event.xd_yin){
 
             if(
@@ -2171,16 +2156,15 @@ xd_dudie:{
 
             event.xd_discarded=result.cards[0];
 
-            // 判断是不是串或薯条
+            // 是否弃的是串或薯条
             event.xd_special=(
                 event.xd_discarded.name=="lv_chuan_card" ||
                 event.xd_discarded.name=="dm_shutiao"
             );
 
-            // 下一步失去体力
+            // 失去1点体力
             player.loseHp(1);
 
-            event.goto(5);
             return;
         }
 
@@ -2204,15 +2188,27 @@ xd_dudie:{
             return;
         }
 
-        player.disableEquip(
-            event.xd_slot
-        );
+        player.disableEquip(event.xd_slot);
 
 
         "step 2"
 
         // =================================================
-        // 阳：选择锦囊牌
+        // 阴：失去体力后，选择目标
+        // =================================================
+        if(event.xd_yin){
+
+            player.chooseTarget(
+                "度叠·阴：选择一名角色，其增加1点体力上限并回复1点体力",
+                true
+            );
+
+            return;
+        }
+
+
+        // =================================================
+        // 阳：选择普通锦囊
         // =================================================
 
         var tricks=[];
@@ -2225,7 +2221,6 @@ xd_dudie:{
                 continue;
             }
 
-            // 只取普通锦囊
             if(lib.card[name].type=="trick"){
                 tricks.push(name);
             }
@@ -2246,6 +2241,32 @@ xd_dudie:{
 
 
         "step 3"
+
+        // =================================================
+        // 阴：目标处理
+        // =================================================
+        if(event.xd_yin){
+
+            if(
+                !result.bool ||
+                !result.targets ||
+                !result.targets.length
+            ){
+                event.finish();
+                return;
+            }
+
+            event.xd_target=result.targets[0];
+
+            event.xd_target.gainMaxHp(1);
+
+            return;
+        }
+
+
+        // =================================================
+        // 阳：使用锦囊
+        // =================================================
 
         if(
             !result.bool ||
@@ -2271,56 +2292,45 @@ xd_dudie:{
         return;
 
 
+        "step 4"
+
         // =================================================
-        // 阴：失去体力后选择目标
+        // 阴：回复1点体力
         // =================================================
 
-        "step 5"
-
-        player.chooseTarget(
-            "度叠·阴：选择一名角色，其增加1点体力上限并回复1点体力",
-            true
-        );
-
-
-        "step 6"
-
-        if(
-            !result.bool ||
-            !result.targets ||
-            !result.targets.length
-        ){
+        if(!event.xd_yin){
             event.finish();
             return;
         }
 
-        event.xd_target=result.targets[0];
-
-        event.xd_target.gainMaxHp(1);
-
-
-        "step 7"
-
-        event.xd_target.recover(1);
+        if(
+            event.xd_target &&
+            event.xd_target.isIn()
+        ){
+            event.xd_target.recover(1);
+        }
 
 
-        "step 8"
+        "step 5"
 
-        // 如果弃置的是【串】或者【薯条】
-        // 恢复所有已废除的装备栏
-        if(event.xd_special){
+        // =================================================
+        // 阴：弃串/薯条则恢复所有废除装备栏
+        // =================================================
+
+        if(
+            event.xd_yin &&
+            event.xd_special
+        ){
 
             for(var i=1;i<=5;i++){
 
                 if(!player.hasEnabledSlot(i)){
-
-                    player.enableEquip(
-                        "equip"+i
-                    );
-
+                    player.enableEquip("equip"+i);
                 }
             }
         }
+
+        event.finish();
     },
 
     ai:{
