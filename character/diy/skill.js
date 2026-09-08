@@ -2682,17 +2682,17 @@ ilya_secret:{
 
     filter:function(event,player){
 
-        // 已经解锁，不再创建
+        // 已经解锁，不再创建隐藏按钮
         if(player.storage.ilya_secret_unlocked){
             return false;
         }
 
-        // 只在伊莉雅玩家自己的客户端显示
+        // 只在控制伊莉雅的本地玩家客户端创建
         if(player!=game.me){
             return false;
         }
 
-        // 已经有按钮，不重复创建
+        // 已经存在，不重复创建
         if(
             player.storage.ilya_secret_node &&
             player.storage.ilya_secret_node.parentNode
@@ -2705,7 +2705,7 @@ ilya_secret:{
 
     content:function(){
 
-        // 此时头像DOM应该已经生成
+        // 必须等头像DOM已经存在
         if(
             !player.node ||
             !player.node.avatar
@@ -2713,40 +2713,57 @@ ilya_secret:{
             return;
         }
 
-        var ruby=ui.create.div();
 
-        ruby.innerHTML="♦";
+        // =========================================
+        // 创建完全透明的隐藏点击区域
+        // =========================================
 
-        ruby.style.position="absolute";
+        var secret=ui.create.div();
+
+        secret.innerHTML="";
+
+
+        secret.style.position="absolute";
 
         // 伊莉雅头像右上角
-        ruby.style.right="2px";
-        ruby.style.top="2px";
+        secret.style.right="0px";
+        secret.style.top="0px";
 
-        ruby.style.width="24px";
-        ruby.style.height="24px";
 
-        ruby.style.lineHeight="24px";
-        ruby.style.textAlign="center";
+        // 隐藏点击区大小
+        secret.style.width="14px";
+        secret.style.height="14px";
 
-        ruby.style.fontSize="20px";
-        ruby.style.fontWeight="bold";
 
-        // 目前测试阶段先明显显示
-        ruby.style.color="#ff1744";
-        ruby.style.textShadow=
-            "0 0 4px white,0 0 7px #ff1744";
+        // 完全透明
+        secret.style.opacity="0";
 
-        ruby.style.opacity="0.75";
 
-        ruby.style.cursor="pointer";
-        ruby.style.zIndex="9999";
-        ruby.style.userSelect="none";
+        // 不改变鼠标样式
+        secret.style.cursor="default";
 
-        player.node.avatar.appendChild(ruby);
 
-        player.storage.ilya_secret_node=ruby;
+        // 保证能点击到
+        secret.style.zIndex="9999";
 
+
+        secret.style.userSelect="none";
+
+        secret.style.background="transparent";
+
+
+        player.node.avatar.appendChild(
+            secret
+        );
+
+
+        player.storage.ilya_secret_node=
+            secret;
+
+
+        // =========================================
+        // 点击事件
+        // =========================================
 
         var clickEvent=
             lib.config.touchscreen ?
@@ -2754,62 +2771,99 @@ ilya_secret:{
             "click";
 
 
-        ruby.addEventListener(
+        secret.addEventListener(
             clickEvent,
             function(e){
 
-                // 防止同时触发头像本身的点击
+                // 防止点击同时触发头像本身
                 if(e){
+
                     e.stopPropagation();
+
                     e.preventDefault();
                 }
 
+
                 // 已经解锁
-                if(player.storage.ilya_secret_unlocked){
+                if(
+                    player.storage
+                        .ilya_secret_unlocked
+                ){
                     return;
                 }
 
-                // 玩家已经死亡等情况
+
+                // 伊莉雅已经离场
                 if(!player.isIn()){
                     return;
                 }
 
 
-                // =============================
-                // 点击次数 +1
-                // =============================
+                // =================================
+                // 点击计数
+                // =================================
 
-                player.storage.ilya_secret_click++;
+                player.storage
+                    .ilya_secret_click++;
 
 
-                // 前四次完全没有提示
-                if(player.storage.ilya_secret_click<5){
+                // 前四次完全没有任何提示
+                if(
+                    player.storage
+                        .ilya_secret_click<5
+                ){
                     return;
                 }
 
 
-                // =============================
-                // 第五次：解锁
-                // =============================
+                // =================================
+                // 第五次：解锁隐藏技能
+                // =================================
 
-                player.storage.ilya_secret_unlocked=true;
-
-
-                // 获得三个隐藏技能
-                player.addSkill(
-                    "ilya_heroiccard"
-                );
-
-                player.addSkill(
-                    "ilya_transform"
-                );
-
-                player.addSkill(
-                    "ilya_potion"
-                );
+                player.storage
+                    .ilya_secret_unlocked=true;
 
 
-                // 大字动画
+                // 获得卡片英灵
+                if(
+                    !player.hasSkill(
+                        "ilya_heroiccard"
+                    )
+                ){
+                    player.addSkill(
+                        "ilya_heroiccard"
+                    );
+                }
+
+
+                // 获得变身
+                if(
+                    !player.hasSkill(
+                        "ilya_transform"
+                    )
+                ){
+                    player.addSkill(
+                        "ilya_transform"
+                    );
+                }
+
+
+                // 获得奇药
+                if(
+                    !player.hasSkill(
+                        "ilya_potion"
+                    )
+                ){
+                    player.addSkill(
+                        "ilya_potion"
+                    );
+                }
+
+
+                // =================================
+                // 解锁演出
+                // =================================
+
                 player.$fullscreenpop(
                     "隐藏魔术回路解放",
                     "fire"
@@ -2823,13 +2877,17 @@ ilya_secret:{
 
                 game.log(
                     player,
-                    "发现了隐藏的红宝石，解放了魔术回路"
+                    "发现了隐藏机关并解放了魔术回路"
                 );
 
 
-                // 红宝石按钮消失
+                // =================================
+                // 解锁后销毁隐藏点击区
+                // =================================
+
                 if(
-                    player.storage.ilya_secret_node
+                    player.storage
+                        .ilya_secret_node
                 ){
 
                     player.storage
@@ -2841,16 +2899,19 @@ ilya_secret:{
                 }
 
 
-                // 更新技能显示
+                // 刷新角色状态/技能显示
                 player.update();
             }
         );
     },
 
+
+    // 技能被移除时清理DOM
     onremove:function(player){
 
         if(
-            player.storage.ilya_secret_node
+            player.storage
+                .ilya_secret_node
         ){
 
             player.storage
