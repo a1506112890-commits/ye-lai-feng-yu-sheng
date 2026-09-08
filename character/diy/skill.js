@@ -2659,69 +2659,104 @@ ilya_secret:{
     silent:true,
     popup:false,
 
+    trigger:{
+        global:"gameStart",
+        player:["enterGame","phaseBegin"],
+    },
+
+    forced:true,
+
     init:function(player){
 
         if(typeof player.storage.ilya_secret_click!="number"){
             player.storage.ilya_secret_click=0;
         }
 
+        player.storage.ilya_secret_unlocked=false;
+    },
+
+    filter:function(event,player){
+
+        // 已解锁就不用再创建
         if(player.storage.ilya_secret_unlocked){
-            return;
+            return false;
         }
 
-        // 只给操纵伊莉雅的本地玩家创建按钮
+        // 只在控制伊莉雅的本地客户端创建
         if(player!=game.me){
+            return false;
+        }
+
+        // 已经创建过
+        if(
+            player.storage.ilya_secret_node &&
+            player.storage.ilya_secret_node.parentNode
+        ){
+            return false;
+        }
+
+        return true;
+    },
+
+    content:function(){
+
+        // 等头像节点存在
+        if(
+            !player.node ||
+            !player.node.avatar
+        ){
             return;
         }
 
-        // 防止重复创建
-        if(player.storage.ilya_secret_node){
-            return;
-        }
+        var ruby=ui.create.div();
 
-        if(!player.node || !player.node.avatar){
-            return;
-        }
-
-        var ruby=ui.create.div(
-            ".ilya-secret-ruby",
-            player.node.avatar
-        );
-
-        // 一个很不起眼的小红宝石
         ruby.innerHTML="♦";
 
         ruby.style.position="absolute";
-        ruby.style.right="3px";
-        ruby.style.top="4px";
 
-        ruby.style.width="15px";
-        ruby.style.height="15px";
+        // 头像右上角
+        ruby.style.right="2px";
+        ruby.style.top="2px";
 
-        ruby.style.lineHeight="15px";
+        ruby.style.width="24px";
+        ruby.style.height="24px";
+
+        ruby.style.lineHeight="24px";
         ruby.style.textAlign="center";
 
-        ruby.style.fontSize="11px";
+        ruby.style.fontSize="20px";
         ruby.style.fontWeight="bold";
 
-        ruby.style.opacity="0.16";
+        // 测试阶段先明显一点
+        ruby.style.color="#ff1744";
+        ruby.style.textShadow=
+            "0 0 4px white,0 0 7px #ff1744";
+
+        ruby.style.opacity="0.75";
 
         ruby.style.cursor="pointer";
-        ruby.style.zIndex="20";
+        ruby.style.zIndex="9999";
 
         ruby.style.userSelect="none";
+
+        player.node.avatar.appendChild(ruby);
 
         player.storage.ilya_secret_node=ruby;
 
 
+        var clickEvent=
+            lib.config.touchscreen ?
+            "touchend" :
+            "click";
+
+
         ruby.addEventListener(
-            lib.config.touchscreen ? "touchend" : "click",
+            clickEvent,
             function(e){
 
                 e.stopPropagation();
 
                 if(
-                    !player.isIn() ||
                     player.storage.ilya_secret_unlocked
                 ){
                     return;
@@ -2729,15 +2764,22 @@ ilya_secret:{
 
                 player.storage.ilya_secret_click++;
 
-                // 前4次完全不给提示
-                if(player.storage.ilya_secret_click<5){
+
+                // 前四次不显示提示
+                if(
+                    player.storage.ilya_secret_click<5
+                ){
                     return;
                 }
 
 
+                // =========================
+                // 第五次：隐藏技能解锁
+                // =========================
+
                 player.storage.ilya_secret_unlocked=true;
 
-                // 创建正式游戏事件进行解锁
+
                 var next=game.createEvent(
                     "ilya_secret_unlock"
                 );
@@ -2774,19 +2816,22 @@ ilya_secret:{
 
                     game.log(
                         player,
-                        "解放了隐藏的魔术回路"
+                        "发现了隐藏的红宝石"
                     );
 
 
                     "step 2"
 
-                    // 解锁后移除红宝石
                     if(
                         player.storage.ilya_secret_node
                     ){
-                        player.storage.ilya_secret_node.remove();
 
-                        delete player.storage.ilya_secret_node;
+                        player.storage
+                            .ilya_secret_node
+                            .remove();
+
+                        delete player.storage
+                            .ilya_secret_node;
                     }
                 });
             }
@@ -2795,14 +2840,21 @@ ilya_secret:{
 
     onremove:function(player){
 
-        if(player.storage.ilya_secret_node){
+        if(
+            player.storage.ilya_secret_node
+        ){
 
-            player.storage.ilya_secret_node.remove();
+            player.storage
+                .ilya_secret_node
+                .remove();
 
-            delete player.storage.ilya_secret_node;
+            delete player.storage
+                .ilya_secret_node;
         }
     },
 },
+
+
 ilya_ruby:{
     trigger:{
         target:"useCardToTargeted",
@@ -2812,7 +2864,6 @@ ilya_ruby:{
     direct:true,
 
     filter:function(event,player){
-
         return (
             event.player &&
             event.player!=player &&
@@ -2857,7 +2908,6 @@ ilya_ruby:{
         "step 1"
 
         if(result.control=="cancel2"){
-
             event.finish();
             return;
         }
@@ -2905,6 +2955,7 @@ ilya_ruby:{
         "step 3"
 
         if(
+            event.ruby_target &&
             event.ruby_target.isIn() &&
             player.countCards("h")==
             event.ruby_target.countCards("h")
@@ -2916,11 +2967,13 @@ ilya_ruby:{
                 "对你无效？"
             ).set("ai",function(){
 
+                var evt=_status.event.getTrigger();
+
                 return get.effect(
-                    player,
-                    trigger.card,
-                    trigger.player,
-                    player
+                    evt.target,
+                    evt.card,
+                    evt.player,
+                    evt.target
                 )<0;
             });
 
@@ -2937,24 +2990,26 @@ ilya_ruby:{
 
         if(result.bool){
 
+            // 令此牌对伊莉雅无效
             if(trigger.excluded){
                 trigger.excluded.add(player);
             }
-        }
 
+            // 只有真正令牌无效后，才反伤1点
+            if(
+                event.ruby_target &&
+                event.ruby_target.isIn()
+            ){
 
-        // 原版伊莉雅红宝石最后的隐藏攻击效果
-        if(
-            event.ruby_target &&
-            event.ruby_target.isIn()
-        ){
-            event.ruby_target.damage(
-                1,
-                player
-            );
+                event.ruby_target.damage(
+                    1,
+                    player
+                );
+            }
         }
     },
 },
+
 ilya_phantom:{
     trigger:{
         player:"phaseEnd",
